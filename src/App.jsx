@@ -326,6 +326,14 @@ export default function App() {
     }
   }, [session, showToast]);
 
+  // ── Derived state (must be above early returns — hooks rules) ───────────────
+
+  const complaintReady = useMemo(() => {
+    if (!profile || outages.length === 0) return false;
+    const map = buildOutageMap(outages);
+    return getComplaintReadiness(map, profile.service_band || 'A').ready;
+  }, [profile, outages]);
+
   // ── Document title ────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -364,11 +372,6 @@ export default function App() {
 
   const isAdmin = session?.user?.app_metadata?.is_admin === true;
   const setupIncomplete = !profile?.disco || !profile?.service_band;
-  const complaintReady = useMemo(() => {
-    if (!profile || outages.length === 0) return false;
-    const map = buildOutageMap(outages);
-    return getComplaintReadiness(map, profile.service_band || 'A').ready;
-  }, [profile, outages]);
 
   const tabContent = {
     dashboard: <Dashboard />,
