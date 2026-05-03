@@ -18,14 +18,16 @@ export const NIGERIA_LGAS = [
   { id: 'lagos-badagry',    name: 'Badagry',            state: 'Lagos',       disco: 'EKEDC',  lat: 6.4189, lng: 2.8881 },
   { id: 'lagos-epe',        name: 'Epe',                state: 'Lagos',       disco: 'EKEDC',  lat: 6.5881, lng: 3.9806 },
 
-  // ── FCT / Abuja ───────────────────────────────────────────────────────────
-  { id: 'fct-amac',         name: 'AMAC (Garki / Wuse)',state: 'FCT',         disco: 'AEDC',   lat: 9.0570, lng: 7.4898 },
-  { id: 'fct-maitama',      name: 'Maitama',            state: 'FCT',         disco: 'AEDC',   lat: 9.0833, lng: 7.4833 },
-  { id: 'fct-gwarinpa',     name: 'Gwarinpa',           state: 'FCT',         disco: 'AEDC',   lat: 9.1053, lng: 7.4167 },
-  { id: 'fct-asokoro',      name: 'Asokoro',            state: 'FCT',         disco: 'AEDC',   lat: 9.0400, lng: 7.5133 },
-  { id: 'fct-bwari',        name: 'Bwari',              state: 'FCT',         disco: 'AEDC',   lat: 9.1556, lng: 7.3733 },
-  { id: 'fct-gwagwalada',   name: 'Gwagwalada',         state: 'FCT',         disco: 'AEDC',   lat: 8.9447, lng: 7.0832 },
-  { id: 'fct-kuje',         name: 'Kuje',               state: 'FCT',         disco: 'AEDC',   lat: 8.8731, lng: 7.2256 },
+  // ── FCT / Abuja ── 6 Area Councils (NERC categorisation) ────────────────
+  // AMAC covers: Garki, Wuse, Wuse 2, Maitama, Asokoro, CBD, Guzape,
+  //              Jabi, Utako, Wuye, Life Camp, Lugbe, Durumi, Gwarinpa,
+  //              Karu, Karmo, Kpeyegyi and surrounding districts.
+  { id: 'fct-amac',       name: 'AMAC',        state: 'FCT', disco: 'AEDC', lat: 9.0579, lng: 7.4951 },
+  { id: 'fct-bwari',      name: 'Bwari',       state: 'FCT', disco: 'AEDC', lat: 9.1556, lng: 7.3733 },
+  { id: 'fct-gwagwalada', name: 'Gwagwalada',  state: 'FCT', disco: 'AEDC', lat: 8.9447, lng: 7.0832 },
+  { id: 'fct-kuje',       name: 'Kuje',        state: 'FCT', disco: 'AEDC', lat: 8.8731, lng: 7.2256 },
+  { id: 'fct-abaji',      name: 'Abaji',       state: 'FCT', disco: 'AEDC', lat: 8.4722, lng: 6.9367 },
+  { id: 'fct-kwali',      name: 'Kwali',       state: 'FCT', disco: 'AEDC', lat: 8.7500, lng: 7.0000 },
 
   // ── Rivers State ─────────────────────────────────────────────────────────
   { id: 'rv-phc',           name: 'Port Harcourt',      state: 'Rivers',      disco: 'PHED',   lat: 4.8156, lng: 7.0498 },
