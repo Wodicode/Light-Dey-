@@ -1,15 +1,41 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient.js';
 
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+    </svg>
+  );
+}
+
 export default function AuthScreen() {
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup' | 'reset'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   const clearMessages = () => { setError(''); setSuccessMsg(''); };
+
+  const handleGoogleSignIn = async () => {
+    clearMessages();
+    setGoogleLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) {
+      setError('Google sign-in failed. Please try email instead.');
+      setGoogleLoading(false);
+    }
+    // On success the browser redirects — no further action needed
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,6 +127,32 @@ export default function AuthScreen() {
             {mode === 'signup' && 'Create account'}
             {mode === 'reset' && 'Reset password'}
           </h2>
+
+          {/* Google sign-in — shown on sign-in and sign-up, not reset */}
+          {mode !== 'reset' && (
+            <>
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={googleLoading || loading}
+                className="btn-press w-full py-3 rounded-btn font-semibold text-sm flex items-center justify-center gap-2.5 disabled:opacity-50 mb-4"
+                style={{
+                  backgroundColor: '#F8FAFC',
+                  color: '#1a1a1a',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }}
+              >
+                <GoogleIcon />
+                {googleLoading ? 'Redirecting…' : 'Continue with Google'}
+              </button>
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1 h-px" style={{ backgroundColor: '#334155' }} />
+                <span className="text-xs font-medium" style={{ color: '#475569' }}>or</span>
+                <div className="flex-1 h-px" style={{ backgroundColor: '#334155' }} />
+              </div>
+            </>
+          )}
 
           {error && (
             <div className="mb-4 px-4 py-3 rounded-btn text-xs font-medium" style={{ backgroundColor: '#E74C3C12', borderLeft: '3px solid #E74C3C', color: '#fca5a5' }}>
