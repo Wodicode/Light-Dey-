@@ -119,6 +119,7 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
     <nav
       className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex items-stretch px-1"
       style={{
+        height: 50,
         backgroundColor: 'rgba(11,15,26,0.95)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
@@ -131,21 +132,21 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
           <button
             key={id}
             onClick={() => onTabChange(id)}
-            className="nav-tab flex-1 flex flex-col items-center justify-center py-1 gap-0.5 relative"
+            className="nav-tab flex-1 flex flex-col items-center justify-center gap-0.5 relative"
             style={{ color: active ? '#00A651' : '#4A5470' }}
             aria-label={label}
           >
             <div
-              className="flex items-center justify-center w-10 h-6 rounded-lg relative"
+              className="flex items-center justify-center w-8 h-5 rounded-md relative"
               style={{
                 backgroundColor: active ? 'rgba(0,166,81,0.12)' : 'transparent',
                 transition: 'background-color 0.15s ease',
               }}
             >
-              <Icon size={20} strokeWidth={active ? 2.5 : 1.7} />
+              <Icon size={17} strokeWidth={active ? 2.5 : 1.7} />
               {hasBadge(id) && <BadgeDot color={id === 'report' ? '#00A651' : '#F5A623'} />}
             </div>
-            <span className="text-xs tracking-tight" style={{ fontWeight: active ? 700 : 500 }}>
+            <span className="text-[10px] tracking-tight leading-none" style={{ fontWeight: active ? 700 : 500 }}>
               {label}
             </span>
           </button>
