@@ -27,7 +27,11 @@ export default function AuthScreen() {
       }
 
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin },
+        });
         if (error) throw error;
         setSuccessMsg('Account created! Check your email to confirm your address, then sign in.');
         setMode('signin');
@@ -47,9 +51,11 @@ export default function AuthScreen() {
 
   const friendlyError = (msg) => {
     if (msg.includes('Invalid login credentials')) return 'Incorrect email or password.';
-    if (msg.includes('Email not confirmed')) return 'Please confirm your email address before signing in.';
+    if (msg.includes('Email not confirmed')) return 'Please confirm your email address before signing in. Check your inbox (and spam folder).';
     if (msg.includes('already registered')) return 'An account with this email already exists. Sign in instead.';
     if (msg.includes('Password should be')) return 'Password must be at least 6 characters.';
+    if (msg.toLowerCase().includes('rate limit')) return 'Too many attempts — please wait a few minutes before trying again.';
+    if (msg.toLowerCase().includes('email')) return 'Email could not be sent. Please wait a moment and try again.';
     return msg;
   };
 
