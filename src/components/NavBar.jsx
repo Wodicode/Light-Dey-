@@ -1,10 +1,11 @@
 import React from 'react';
-import { Home, List, BarChart2, FileText, Shield } from 'lucide-react';
+import { Home, List, MapPin, BarChart2, FileText, Shield } from 'lucide-react';
 
 const BASE_TABS = [
-  { id: 'dashboard', label: 'Dashboard', Icon: Home },
+  { id: 'dashboard', label: 'Home',      Icon: Home },
   { id: 'log',       label: 'Log',       Icon: List },
-  { id: 'analytics', label: 'Analytics', Icon: BarChart2 },
+  { id: 'community', label: 'Community', Icon: MapPin },
+  { id: 'analytics', label: 'Stats',     Icon: BarChart2 },
   { id: 'report',    label: 'Report',    Icon: FileText },
 ];
 

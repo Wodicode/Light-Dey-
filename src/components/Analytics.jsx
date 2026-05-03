@@ -105,8 +105,13 @@ export default function Analytics() {
     };
   }, [outageMap]);
 
-  const currentStreak = useMemo(() => getCurrentConsecutiveMissedStreak(outageMap, band), [outageMap, band]);
+  const currentStreak    = useMemo(() => getCurrentConsecutiveMissedStreak(outageMap, band), [outageMap, band]);
   const compensationLine = config.minHoursPerDay * config.compensationThreshold;
+
+  const daysWithData = useMemo(
+    () => getDaysInCurrentMonth().filter(d => outageMap[d] !== undefined).length,
+    [outageMap]
+  );
 
   if (outagesLoading) {
     return (
@@ -117,9 +122,38 @@ export default function Analytics() {
     );
   }
 
+  if (!outagesLoading && daysWithData === 0) {
+    return (
+      <div className="px-4 py-6 flex flex-col gap-6">
+        <h2 className="text-xl font-bold text-textPrimary">Analytics</h2>
+        <div
+          className="rounded-card p-8 text-center flex flex-col items-center gap-3"
+          style={{ backgroundColor: '#1E293B', boxShadow: '0 0 0 1px rgba(255,255,255,0.05)' }}
+        >
+          <span style={{ fontSize: 40 }}>📊</span>
+          <p className="font-black text-textPrimary text-base">No outage data yet</p>
+          <p className="text-xs leading-relaxed max-w-xs" style={{ color: '#475569' }}>
+            Tap <strong style={{ color: '#F8FAFC' }}>LIGHT IS OFF</strong> on the Log tab when your
+            power goes out. Charts will appear after your first logged outage.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-4 py-6 flex flex-col gap-6">
       <h2 className="text-xl font-bold text-textPrimary">Analytics</h2>
+
+      {daysWithData < 7 && (
+        <div
+          className="rounded-card px-4 py-3 text-xs"
+          style={{ backgroundColor: '#1E293B', borderLeft: '3px solid #F39C12', color: '#fbbf24' }}
+        >
+          {daysWithData} day{daysWithData !== 1 ? 's' : ''} tracked this month.
+          Charts become more meaningful after 7+ days of data.
+        </div>
+      )}
 
       {/* Summary stat cards */}
       <div className="grid grid-cols-2 gap-3">
@@ -158,7 +192,13 @@ export default function Analytics() {
               <BarChart data={monthlyData} margin={{ top: 8, right: 4, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                 <XAxis dataKey="day" tick={{ fill: '#94A3B8', fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis domain={[0, 24]} tick={{ fill: '#94A3B8', fontSize: 10 }} tickLine={false} axisLine={false} tickCount={5} />
+                <YAxis
+                  domain={[dataMin => Math.max(0, Math.floor(dataMin) - 1), 24]}
+                  tick={{ fill: '#94A3B8', fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickCount={5}
+                />
                 <Tooltip
                   contentStyle={tooltipStyle}
                   cursor={{ fill: 'rgba(255,255,255,0.04)' }}

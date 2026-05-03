@@ -8,6 +8,7 @@ import OutageLog from './components/OutageLog.jsx';
 import Analytics from './components/Analytics.jsx';
 import ReportGenerator from './components/ReportGenerator.jsx';
 import Settings from './components/Settings.jsx';
+import Community from './components/Community.jsx';
 import Admin from './components/Admin.jsx';
 
 // ── Contexts ────────────────────────────────────────────────────────────────
@@ -182,12 +183,20 @@ export default function App() {
         .single();
       if (error) throw error;
       setActiveOutage(null);
-      setOutages(prev => prev.map(o => o.id === data.id ? data : o));
+      setOutages(prev => {
+        const next = prev.map(o => o.id === data.id ? data : o);
+        // Compute total outage minutes for the day from the updated list
+        const dayTotal = next
+          .filter(o => o.date === data.date && !o.is_active)
+          .reduce((sum, o) => sum + (o.duration_minutes || 0), 0);
+        syncCommunityReport(data.date, dayTotal);
+        return next;
+      });
       showToast('Power restored. Duration logged.');
     } catch (err) {
       showToast('Failed to end outage: ' + err.message, 'error');
     }
-  }, [activeOutage, showToast]);
+  }, [activeOutage, syncCommunityReport, showToast]);
 
   const addManualOutage = useCallback(async (fields) => {
     if (!session?.user) return;
@@ -212,6 +221,12 @@ export default function App() {
           if (b.date !== a.date) return b.date.localeCompare(a.date);
           return b.start_time.localeCompare(a.start_time);
         });
+        if (!data.is_active) {
+          const dayTotal = next
+            .filter(o => o.date === data.date && !o.is_active)
+            .reduce((sum, o) => sum + (o.duration_minutes || 0), 0);
+          syncCommunityReport(data.date, dayTotal);
+        }
         return next;
       });
       if (data.is_active) setActiveOutage(data);
@@ -221,7 +236,7 @@ export default function App() {
       showToast('Failed to log outage: ' + err.message, 'error');
       return { success: false, error: err.message };
     }
-  }, [session, showToast]);
+  }, [session, syncCommunityReport, showToast]);
 
   const updateOutage = useCallback(async (id, fields) => {
     try {
@@ -261,6 +276,21 @@ export default function App() {
       showToast('Failed to delete: ' + err.message, 'error');
     }
   }, [activeOutage, showToast]);
+
+  // Silently upsert one anonymised row for the given date into community_reports.
+  // Called after any mutation that completes an outage, if the user has opted in.
+  const syncCommunityReport = useCallback(async (date, outageMinutesForDay) => {
+    if (!profile?.community_opt_in || !profile?.lga || !session?.user) return;
+    await supabase.from('community_reports').upsert({
+      user_id:        session.user.id,
+      report_date:    date,
+      lga:            profile.lga,
+      disco:          profile.disco   || null,
+      service_band:   profile.service_band || null,
+      outage_minutes: outageMinutesForDay,
+    }, { onConflict: 'user_id,report_date' });
+    // failures are intentionally swallowed — sync is best-effort
+  }, [profile, session]);
 
   const saveProfile = useCallback(async (fields) => {
     if (!session?.user) return { success: false };
@@ -305,11 +335,12 @@ export default function App() {
 
   const tabContent = {
     dashboard: <Dashboard />,
-    log: <OutageLog />,
+    log:       <OutageLog />,
+    community: <Community />,
     analytics: <Analytics />,
-    report: <ReportGenerator />,
-    settings: <Settings onSaved={() => setCurrentTab('dashboard')} />,
-    admin: <Admin />,
+    report:    <ReportGenerator />,
+    settings:  <Settings onSaved={() => setCurrentTab('dashboard')} />,
+    admin:     <Admin />,
   };
 
   return (

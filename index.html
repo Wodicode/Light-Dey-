@@ -8,6 +8,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- Leaflet -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WPcU="
+      crossorigin=""
+    ></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -160,6 +173,53 @@
         transition: transform 0.1s var(--spring), opacity 0.1s ease, box-shadow 0.15s ease;
       }
       .btn-press:active { transform: scale(0.97); opacity: 0.9; }
+
+      /* ── Leaflet dark theme ───────────────────────────────────────── */
+      .leaflet-container {
+        background: #0F172A;
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+      .leaflet-bar a,
+      .leaflet-bar a:hover {
+        background-color: #1E293B !important;
+        border-color: #334155 !important;
+        color: #F8FAFC !important;
+      }
+      .leaflet-bar a:hover { background-color: #263347 !important; }
+      .leaflet-control-attribution {
+        background: rgba(10,17,33,0.75) !important;
+        color: #334155 !important;
+        font-size: 9px !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+      }
+      .leaflet-control-attribution a { color: #334155 !important; }
+      /* Popup shell */
+      .pw-leaflet-popup .leaflet-popup-content-wrapper {
+        background: #1E293B !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+        padding: 0 !important;
+      }
+      .pw-leaflet-popup .leaflet-popup-content { margin: 0 !important; }
+      .pw-leaflet-popup .leaflet-popup-tip-container { display: none !important; }
+      .pw-leaflet-popup .leaflet-popup-close-button {
+        color: #475569 !important;
+        font-size: 16px !important;
+        top: 5px !important;
+        right: 7px !important;
+      }
+      /* Popup content helpers */
+      .pw-popup { padding: 12px 14px; min-width: 160px; }
+      .pw-popup-title { font-size: 13px; font-weight: 700; color: #F8FAFC; margin: 0 0 3px; }
+      .pw-popup-sub   { font-size: 11px; color: #475569; margin: 0 0 8px; }
+      .pw-popup-rows  {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 3px 12px;
+        font-size: 12px;
+      }
     </style>
   </head>
   <body>

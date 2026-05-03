@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient.js';
 import { useProfile, useAuth } from '../App.jsx';
 import { DISCO_INFO } from '../lib/calculations.js';
+import { LGA_BY_STATE, LGA_STATES } from '../lib/nigeriaLGAs.js';
 
-const DISCOS = ['AEDC', 'EKEDC', 'IE', 'PHED', 'EEDC', 'IBEDC', 'Other'];
-const BANDS = ['A', 'B', 'C', 'D', 'E'];
+const DISCOS = ['AEDC', 'EKEDC', 'IE', 'PHED', 'EEDC', 'IBEDC', 'BeDE', 'KEDCO', 'KAEDCO', 'Other'];
+const BANDS  = ['A', 'B', 'C', 'D', 'E'];
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-btn text-sm text-textPrimary placeholder-textMuted/50 outline-none focus:ring-2 focus:ring-accent';
@@ -19,28 +20,33 @@ export default function Settings({ onSaved }) {
     full_name: '',
     address: '',
     area: '',
+    lga: '',
     disco: 'AEDC',
     service_band: 'A',
     meter_number: '',
     account_number: '',
+    community_opt_in: false,
   });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setForm({
-        full_name: profile.full_name || '',
-        address: profile.address || '',
-        area: profile.area || '',
-        disco: profile.disco || 'AEDC',
-        service_band: profile.service_band || 'A',
-        meter_number: profile.meter_number || '',
-        account_number: profile.account_number || '',
+        full_name:        profile.full_name        || '',
+        address:          profile.address          || '',
+        area:             profile.area             || '',
+        lga:              profile.lga              || '',
+        disco:            profile.disco            || 'AEDC',
+        service_band:     profile.service_band     || 'A',
+        meter_number:     profile.meter_number     || '',
+        account_number:   profile.account_number   || '',
+        community_opt_in: profile.community_opt_in ?? false,
       });
     }
   }, [profile]);
 
-  const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
+  const set    = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
+  const toggle = (key) => ()  => setForm(f => ({ ...f, [key]: !f[key] }));
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -82,6 +88,71 @@ export default function Settings({ onSaved }) {
             <label className={labelClass}>Area / Neighbourhood</label>
             <input className={inputClass} style={inputStyle} type="text" placeholder="e.g. Gwarinpa, Abuja" value={form.area} onChange={set('area')} />
           </div>
+          <div>
+            <label className={labelClass}>
+              Local Government Area (LGA)
+              <span className="ml-2 text-xs font-normal" style={{ color: '#475569' }}>
+                used for the community map
+              </span>
+            </label>
+            <select className={inputClass} style={inputStyle} value={form.lga} onChange={set('lga')}>
+              <option value="">— Select your LGA —</option>
+              {LGA_STATES.map(state => (
+                <optgroup key={state} label={state}>
+                  {LGA_BY_STATE[state].map(lga => (
+                    <option key={lga.id} value={lga.name}>{lga.name}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+        </section>
+
+        {/* Community reporting */}
+        <section className="rounded-card p-4 flex flex-col gap-4" style={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}>
+          <h3 className="text-sm font-semibold text-textMuted uppercase tracking-wide">Community Reporting</h3>
+          <p className="text-xs leading-relaxed" style={{ color: '#475569' }}>
+            Contribute anonymised outage data to the community map. Only your LGA and daily
+            outage minutes are shared — your name, address, and account details are never included.
+          </p>
+          <button
+            type="button"
+            onClick={toggle('community_opt_in')}
+            className="flex items-center gap-3 text-left"
+          >
+            <div
+              className="relative shrink-0 rounded-full transition-colors duration-200"
+              style={{
+                width: 44, height: 24,
+                backgroundColor: form.community_opt_in ? '#2ECC71' : '#334155',
+              }}
+            >
+              <div
+                className="absolute top-0.5 rounded-full transition-transform duration-200"
+                style={{
+                  width: 20, height: 20,
+                  backgroundColor: '#F8FAFC',
+                  transform: form.community_opt_in ? 'translateX(22px)' : 'translateX(2px)',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                }}
+              />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-textPrimary">
+                {form.community_opt_in ? 'Contributing anonymously' : 'Not contributing'}
+              </p>
+              <p className="text-xs" style={{ color: '#475569' }}>
+                {form.community_opt_in
+                  ? 'Your outage data helps others see area-wide patterns.'
+                  : 'Toggle to share your outage data anonymously.'}
+              </p>
+            </div>
+          </button>
+          {form.community_opt_in && !form.lga && (
+            <p className="text-xs px-3 py-2 rounded-btn" style={{ backgroundColor: '#F39C1215', color: '#fbbf24', border: '1px solid #F39C1230' }}>
+              Select your LGA above to start contributing.
+            </p>
+          )}
         </section>
 
         {/* Electricity account */}
