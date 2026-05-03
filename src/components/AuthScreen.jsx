@@ -91,8 +91,8 @@ export default function AuthScreen() {
   };
 
   const inputCls = 'w-full px-3 py-2.5 rounded-btn text-sm text-textPrimary outline-none transition-all duration-150';
-  const inputSty = { backgroundColor: '#0a1120', border: '1px solid #334155', boxShadow: '0 1px 0 rgba(255,255,255,0.03) inset' };
-  const inputFocusSty = { border: '1px solid rgba(46,204,113,0.5)', boxShadow: '0 0 0 3px rgba(46,204,113,0.12), 0 1px 0 rgba(255,255,255,0.03) inset' };
+  const inputSty = { backgroundColor: '#0B0F1A', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 1px 0 rgba(255,255,255,0.03) inset' };
+  const inputFocusSty = { backgroundColor: '#0B0F1A', border: '1px solid rgba(0,166,81,0.5)', boxShadow: '0 0 0 3px rgba(0,166,81,0.12), 0 1px 0 rgba(255,255,255,0.03) inset' };
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-12">
@@ -100,29 +100,66 @@ export default function AuthScreen() {
         {/* Wordmark */}
         <div className="text-center mb-8">
           <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 text-3xl"
+            className="inline-flex items-center justify-center mb-4"
             style={{
-              background: 'linear-gradient(135deg, #1a2a1f 0%, #1E293B 100%)',
-              boxShadow: '0 0 0 1px rgba(46,204,113,0.2), 0 8px 32px rgba(0,0,0,0.3)',
+              width: 64, height: 64, borderRadius: 16,
+              background: 'linear-gradient(135deg, rgba(0,166,81,0.2) 0%, rgba(17,24,39,0.8) 100%)',
+              border: '1px solid rgba(0,166,81,0.25)',
+              boxShadow: '0 0 32px rgba(0,166,81,0.15)',
+              fontSize: 28,
             }}
           >
             ⚡
           </div>
-          <h1 className="text-2xl font-black text-textPrimary tracking-tight">PowerWatch Nigeria</h1>
-          <p className="text-xs font-medium mt-1.5 uppercase tracking-widest" style={{ color: '#475569' }}>
+          <div className="flex items-center justify-center mb-3">
+            <span
+              className="badge"
+              style={{
+                background: 'rgba(0,166,81,0.1)',
+                border: '1px solid rgba(0,166,81,0.25)',
+                color: '#00A651',
+              }}
+            >
+              <span className="status-pulse" style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#00A651', display: 'inline-block' }} />
+              Live · Track Your Supply
+            </span>
+          </div>
+          <h1
+            style={{
+              fontFamily: 'Syne, system-ui, sans-serif',
+              fontWeight: 800,
+              fontSize: 'clamp(28px, 6vw, 36px)',
+              letterSpacing: '-0.03em',
+              color: '#F0F4FF',
+              lineHeight: 1.1,
+            }}
+          >PowerWatch Nigeria</h1>
+          <p className="text-xs font-medium mt-2 uppercase tracking-widest" style={{ color: '#4A5470', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
             Track supply · Know your rights
           </p>
         </div>
 
         {/* Card */}
         <div
-          className="rounded-card p-6"
           style={{
-            backgroundColor: '#1E293B',
-            boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px rgba(0,0,0,0.4)',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 20,
+            padding: 28,
+            boxShadow: '0 24px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
           }}
         >
-          <h2 className="text-sm font-black uppercase tracking-widest mb-5" style={{ color: '#64748B' }}>
+          <h2
+            style={{
+              fontFamily: 'Syne, system-ui, sans-serif',
+              fontWeight: 700,
+              fontSize: 11,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: '#4A5470',
+              marginBottom: 20,
+            }}
+          >
             {mode === 'signin' && 'Sign in'}
             {mode === 'signup' && 'Create account'}
             {mode === 'reset' && 'Reset password'}
@@ -140,6 +177,7 @@ export default function AuthScreen() {
                   backgroundColor: '#F8FAFC',
                   color: '#1a1a1a',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  borderRadius: 10,
                 }}
               >
                 <GoogleIcon />
@@ -147,27 +185,27 @@ export default function AuthScreen() {
               </button>
 
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex-1 h-px" style={{ backgroundColor: '#334155' }} />
-                <span className="text-xs font-medium" style={{ color: '#475569' }}>or</span>
-                <div className="flex-1 h-px" style={{ backgroundColor: '#334155' }} />
+                <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.07)' }} />
+                <span className="text-xs font-medium" style={{ color: '#4A5470' }}>or</span>
+                <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(255,255,255,0.07)' }} />
               </div>
             </>
           )}
 
           {error && (
-            <div className="mb-4 px-4 py-3 rounded-btn text-xs font-medium" style={{ backgroundColor: '#E74C3C12', borderLeft: '3px solid #E74C3C', color: '#fca5a5' }}>
+            <div className="mb-4 px-4 py-3 rounded-btn text-xs font-medium" style={{ backgroundColor: 'rgba(229,57,53,0.06)', borderLeft: '3px solid #E53935', color: '#fca5a5' }}>
               {error}
             </div>
           )}
           {successMsg && (
-            <div className="mb-4 px-4 py-3 rounded-btn text-xs font-medium" style={{ backgroundColor: '#2ECC7112', borderLeft: '3px solid #2ECC71', color: '#86efac' }}>
+            <div className="mb-4 px-4 py-3 rounded-btn text-xs font-medium" style={{ backgroundColor: 'rgba(0,166,81,0.06)', borderLeft: '3px solid #00A651', color: '#6ee7a0' }}>
               {successMsg}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: '#475569' }}>Email</label>
+              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: '#4A5470' }}>Email</label>
               <input
                 type="email"
                 required
@@ -184,7 +222,7 @@ export default function AuthScreen() {
 
             {mode !== 'reset' && (
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: '#475569' }}>Password</label>
+                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: '#4A5470' }}>Password</label>
                 <input
                   type="password"
                   required
@@ -203,11 +241,11 @@ export default function AuthScreen() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-press w-full py-3 rounded-btn font-black text-sm uppercase tracking-widest disabled:opacity-50"
+              className="btn-press btn-glow w-full py-3 rounded-btn font-black text-sm uppercase tracking-widest disabled:opacity-50"
               style={{
-                background: 'linear-gradient(180deg, #2ECC71 0%, #27AE60 100%)',
-                color: '#0a1a0f',
-                boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset, 0 4px 12px rgba(46,204,113,0.2)',
+                background: 'linear-gradient(180deg, #00A651 0%, #008f47 100%)',
+                color: '#fff',
+                boxShadow: '0 0 24px rgba(0,166,81,0.3), 0 1px 0 rgba(255,255,255,0.15) inset',
               }}
             >
               {loading ? 'Please wait…' : (
@@ -232,7 +270,7 @@ export default function AuthScreen() {
                   <button
                     onClick={() => { setMode('signup'); clearMessages(); }}
                     className="font-medium hover:underline"
-                    style={{ color: '#2ECC71' }}
+                    style={{ color: '#00A651' }}
                   >
                     Sign up
                   </button>
@@ -245,7 +283,7 @@ export default function AuthScreen() {
                 <button
                   onClick={() => { setMode('signin'); clearMessages(); }}
                   className="font-medium hover:underline"
-                  style={{ color: '#2ECC71' }}
+                  style={{ color: '#00A651' }}
                 >
                   Sign in
                 </button>

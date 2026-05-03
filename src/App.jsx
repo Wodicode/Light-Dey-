@@ -34,11 +34,11 @@ function Toast({ toasts }) {
           key={t.id}
           className="toast-enter px-4 py-3 rounded-btn text-sm font-semibold pointer-events-auto"
           style={{
-            backgroundColor: t.type === 'error' ? '#E74C3C' : '#1a2a1f',
-            color: '#F8FAFC',
-            border: `1px solid ${t.type === 'error' ? 'rgba(255,255,255,0.12)' : 'rgba(46,204,113,0.35)'}`,
+            backgroundColor: t.type === 'error' ? '#E53935' : '#0d1f14',
+            color: '#F0F4FF',
+            border: `1px solid ${t.type === 'error' ? 'rgba(255,255,255,0.12)' : 'rgba(0,166,81,0.35)'}`,
             boxShadow: t.type === 'error'
-              ? '0 4px 20px rgba(231,76,60,0.3), 0 1px 0 rgba(255,255,255,0.08) inset'
+              ? '0 4px 20px rgba(229,57,53,0.3), 0 1px 0 rgba(255,255,255,0.08) inset'
               : '0 4px 20px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.06) inset',
           }}
         >

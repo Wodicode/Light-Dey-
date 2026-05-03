@@ -16,31 +16,31 @@ import {
 
 // ── Stat card with colored top accent bar ────────────────────────────────────
 function StatCard({ label, value, sub, color }) {
-  const c = color || '#64748B';
+  const c = color || '#4A5470';
   return (
     <div
-      className="rounded-card p-4 flex flex-col gap-1 overflow-hidden relative"
+      className="rounded-card p-4 flex flex-col gap-1 overflow-hidden relative card-hover"
       style={{
-        backgroundColor: '#1E293B',
-        boxShadow: '0 0 0 1px rgba(255,255,255,0.05)',
+        backgroundColor: '#111827',
+        border: '1px solid rgba(255,255,255,0.07)',
       }}
     >
       {/* Colored accent stripe */}
       <div
-        className="absolute top-0 left-0 right-0 h-0.5"
-        style={{ backgroundColor: c, opacity: 0.9 }}
+        className="absolute top-0 left-0 right-0"
+        style={{ height: '2px', backgroundColor: c, opacity: 0.9 }}
       />
-      <p className="text-xs font-semibold uppercase tracking-widest mt-0.5" style={{ color: '#64748B' }}>
+      <p className="text-xs font-semibold uppercase tracking-widest mt-0.5" style={{ color: '#4A5470' }}>
         {label}
       </p>
       <p
         className="text-3xl font-black tabular-nums leading-none tracking-tight"
-        style={{ color: c }}
+        style={{ color: c, fontFamily: 'Syne, system-ui, sans-serif' }}
       >
         {value}
       </p>
       {sub && (
-        <p className="text-xs mt-0.5" style={{ color: '#475569' }}>{sub}</p>
+        <p className="text-xs mt-0.5" style={{ color: '#4A5470' }}>{sub}</p>
       )}
     </div>
   );
@@ -49,9 +49,9 @@ function StatCard({ label, value, sub, color }) {
 // ── Alert box with left-border accent + icon ─────────────────────────────────
 function AlertBox({ color, title, children }) {
   const cfg = {
-    amber: { bg: '#F39C120A', border: '#F39C12', text: '#fbbf24', dim: '#78450a' },
-    red:   { bg: '#E74C3C0A', border: '#E74C3C', text: '#fca5a5', dim: '#7f1d1d' },
-    green: { bg: '#2ECC710A', border: '#2ECC71', text: '#86efac', dim: '#14532d' },
+    amber: { bg: 'rgba(245,166,35,0.06)',  border: '#F5A623', text: '#fbbf24', dim: '#78450a' },
+    red:   { bg: 'rgba(229,57,53,0.06)',   border: '#E53935', text: '#fca5a5', dim: '#7f1d1d' },
+    green: { bg: 'rgba(0,166,81,0.06)',    border: '#00A651', text: '#6ee7a0', dim: '#14532d' },
   };
   const c = cfg[color] || cfg.amber;
   return (
@@ -76,7 +76,7 @@ function AlertBox({ color, title, children }) {
 // ── Shimmer skeleton ──────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="rounded-card p-4 overflow-hidden relative" style={{ backgroundColor: '#1E293B' }}>
+    <div className="rounded-card p-4 overflow-hidden relative" style={{ backgroundColor: '#111827' }}>
       <div className="skeleton h-2 w-16 mb-3" />
       <div className="skeleton h-8 w-20 mb-2" />
       <div className="skeleton h-2 w-24" />
@@ -88,16 +88,16 @@ function SkeletonCard() {
 function SectionHeading({ children, badge, badgeColor }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <h2 className="text-base font-black uppercase tracking-widest" style={{ color: '#94A3B8' }}>
+      <h2 className="text-base font-black uppercase tracking-widest" style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}>
         {children}
       </h2>
       {badge && (
         <span
           className="text-xs font-bold px-2.5 py-1 rounded-full"
           style={{
-            backgroundColor: badgeColor + '22',
+            backgroundColor: badgeColor + '18',
             color: badgeColor,
-            border: `1px solid ${badgeColor}44`,
+            border: `1px solid ${badgeColor}35`,
           }}
         >
           {badge}
@@ -130,12 +130,12 @@ export default function Dashboard() {
   const todayMet = isDayThresholdMet(band, todayOutageMins);
   const todayShortfall = Math.max(0, config.minHoursPerDay - todaySupplyHours);
 
-  let todayStatusColor = '#2ECC71';
+  let todayStatusColor = '#00A651';
   let todayStatusLabel = 'On Track';
   if (!todayMet) {
     const shortfallPct = todayShortfall / config.minHoursPerDay;
-    if (shortfallPct > 0.10) { todayStatusColor = '#E74C3C'; todayStatusLabel = 'Below Threshold'; }
-    else { todayStatusColor = '#F39C12'; todayStatusLabel = 'Near Threshold'; }
+    if (shortfallPct > 0.10) { todayStatusColor = '#E53935'; todayStatusLabel = 'Below Threshold'; }
+    else { todayStatusColor = '#F5A623'; todayStatusLabel = 'Near Threshold'; }
   }
 
   // Monthly
@@ -156,7 +156,7 @@ export default function Dashboard() {
 
   if (outagesLoading) {
     return (
-      <div className="px-4 py-6 flex flex-col gap-8">
+      <div className="px-4 py-5 flex flex-col gap-8">
         {['Today', 'This Month'].map(s => (
           <div key={s}>
             <div className="skeleton h-3 w-20 mb-4" />
@@ -170,7 +170,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="px-4 py-6 flex flex-col gap-8">
+    <div className="px-4 py-5 flex flex-col gap-8">
       {!profile && (
         <AlertBox color="amber" title="Setup required">
           Complete your profile in Settings to personalise thresholds and generate complaint letters.
@@ -194,7 +194,7 @@ export default function Dashboard() {
             label="Outage"
             value={formatDuration(todayOutageMins)}
             sub={activeOutage ? '● Live' : 'Total downtime'}
-            color={todayOutageMins > 0 ? '#E74C3C' : '#2ECC71'}
+            color={todayOutageMins > 0 ? '#E53935' : '#00A651'}
           />
           <StatCard
             label="Supply %"
@@ -206,7 +206,7 @@ export default function Dashboard() {
             label={todayShortfall > 0 ? 'Shortfall' : 'Surplus'}
             value={`${todayShortfall > 0 ? '-' : '+'}${Math.abs(config.minHoursPerDay - todaySupplyHours).toFixed(1)}h`}
             sub={`vs Band ${band} min`}
-            color={todayShortfall > 0 ? '#E74C3C' : '#2ECC71'}
+            color={todayShortfall > 0 ? '#E53935' : '#00A651'}
           />
         </div>
 
@@ -214,15 +214,15 @@ export default function Dashboard() {
         <div
           className="rounded-card px-4 py-3 text-xs leading-relaxed"
           style={{
-            backgroundColor: '#1E293B',
-            boxShadow: '0 0 0 1px rgba(255,255,255,0.05)',
-            color: '#64748B',
+            backgroundColor: '#111827',
+            border: '1px solid rgba(255,255,255,0.07)',
+            color: '#4A5470',
           }}
         >
           You received{' '}
-          <span className="font-bold" style={{ color: '#F8FAFC' }}>{todaySupplyHours.toFixed(1)} hrs</span>
+          <span className="font-bold" style={{ color: '#F0F4FF' }}>{todaySupplyHours.toFixed(1)} hrs</span>
           {' '}today. Band {band} requires{' '}
-          <span className="font-bold" style={{ color: '#F8FAFC' }}>{config.minHoursPerDay} hrs</span>
+          <span className="font-bold" style={{ color: '#F0F4FF' }}>{config.minHoursPerDay} hrs</span>
           {' '}minimum.{' '}
           {todayShortfall > 0 ? (
             <span style={{ color: '#fca5a5' }}>
@@ -245,25 +245,25 @@ export default function Dashboard() {
             label="Avg Daily"
             value={`${monthStats.avgDailySupplyHours.toFixed(1)}h`}
             sub={`min ${config.minHoursPerDay}h/day`}
-            color={monthStats.avgDailySupplyHours >= config.minHoursPerDay * 0.9 ? '#2ECC71' : '#E74C3C'}
+            color={monthStats.avgDailySupplyHours >= config.minHoursPerDay * 0.9 ? '#00A651' : '#E53935'}
           />
           <StatCard
             label="Total Outage"
             value={`${monthStats.totalOutageHours.toFixed(1)}h`}
             sub={`${monthStats.days.length} days tracked`}
-            color={monthStats.totalOutageHours === 0 ? '#2ECC71' : '#E74C3C'}
+            color={monthStats.totalOutageHours === 0 ? '#00A651' : '#E53935'}
           />
           <StatCard
             label="Days Met"
             value={`${monthStats.daysMetThreshold}`}
             sub={`of ${monthStats.days.length} days`}
-            color="#2ECC71"
+            color="#00A651"
           />
           <StatCard
             label="Days Missed"
             value={`${monthStats.daysMissedThreshold}`}
             sub="below minimum"
-            color={monthStats.daysMissedThreshold > 0 ? '#E74C3C' : '#2ECC71'}
+            color={monthStats.daysMissedThreshold > 0 ? '#E53935' : '#00A651'}
           />
         </div>
 
@@ -274,16 +274,16 @@ export default function Dashboard() {
             value={`${currentStreak}d`}
             sub="missed in a row"
             color={
-              currentStreak >= REGULATORY_TRIGGERS.CONSECUTIVE_DAYS_DOWNGRADE ? '#E74C3C'
-              : currentStreak >= REGULATORY_TRIGGERS.CONSECUTIVE_DAYS_PUBLISH  ? '#F39C12'
-              : '#475569'
+              currentStreak >= REGULATORY_TRIGGERS.CONSECUTIVE_DAYS_DOWNGRADE ? '#E53935'
+              : currentStreak >= REGULATORY_TRIGGERS.CONSECUTIVE_DAYS_PUBLISH  ? '#F5A623'
+              : '#4A5470'
             }
           />
           <StatCard
             label="Longest Streak"
             value={`${longestStreak}d`}
             sub="this month"
-            color={longestStreak >= REGULATORY_TRIGGERS.CONSECUTIVE_DAYS_DOWNGRADE ? '#E74C3C' : '#475569'}
+            color={longestStreak >= REGULATORY_TRIGGERS.CONSECUTIVE_DAYS_DOWNGRADE ? '#E53935' : '#4A5470'}
           />
         </div>
 
