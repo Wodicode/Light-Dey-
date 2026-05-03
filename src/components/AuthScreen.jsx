@@ -27,14 +27,19 @@ export default function AuthScreen() {
       }
 
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        setSuccessMsg('Account created! Check your email to confirm your address, then sign in.');
-        setMode('signin');
+        // If email confirmation is disabled, Supabase returns a session immediately
+        // and onAuthStateChange in App.jsx will navigate automatically.
+        // If somehow a session wasn't created, fall back to sign-in.
+        if (!data.session) {
+          setSuccessMsg('Account created! Sign in with your new credentials.');
+          setMode('signin');
+        }
         return;
       }
 
