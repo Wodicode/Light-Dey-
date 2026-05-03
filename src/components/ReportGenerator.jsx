@@ -1,17 +1,33 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Download, FileText } from 'lucide-react';
-import { useProfile, useOutages } from '../App.jsx';
-import { buildComplaintLetter, buildCSV, downloadFile } from '../lib/reportBuilder.js';
+import { useProfile, useOutages, useAuth } from '../App.jsx';
+import { buildComplaintLetter, buildCSV, buildRechargeCSV, downloadFile } from '../lib/reportBuilder.js';
 import { todayStr } from '../lib/calculations.js';
+import { supabase } from '../supabaseClient.js';
 
 export default function ReportGenerator() {
   const { profile } = useProfile();
   const { outages, outagesLoading } = useOutages();
+  const { session } = useAuth();
+
+  const [recharges, setRecharges] = useState([]);
+
+  const fetchRecharges = useCallback(async () => {
+    if (!session?.user) return;
+    const { data } = await supabase
+      .from('recharges')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('recharge_date', { ascending: false });
+    if (data) setRecharges(data);
+  }, [session]);
+
+  useEffect(() => { fetchRecharges(); }, [fetchRecharges]);
 
   const letter = useMemo(() => {
     if (!profile) return null;
-    return buildComplaintLetter({ profile, outages });
-  }, [profile, outages]);
+    return buildComplaintLetter({ profile, outages, recharges });
+  }, [profile, outages, recharges]);
 
   const handleDownloadLetter = () => {
     if (!letter) return;
@@ -23,6 +39,13 @@ export default function ReportGenerator() {
     if (outages.length === 0) return;
     const csv = buildCSV(outages);
     const filename = `powerwatch-outages-${todayStr()}.csv`;
+    downloadFile(csv, filename, 'text/csv');
+  };
+
+  const handleDownloadRechargeCSV = () => {
+    if (recharges.length === 0) return;
+    const csv = buildRechargeCSV(recharges);
+    const filename = `powerwatch-recharges-${todayStr()}.csv`;
     downloadFile(csv, filename, 'text/csv');
   };
 
@@ -55,6 +78,15 @@ export default function ReportGenerator() {
         >
           <FileText size={17} />
           Export Outage Log (CSV)
+        </button>
+        <button
+          onClick={handleDownloadRechargeCSV}
+          disabled={recharges.length === 0}
+          className="flex items-center justify-center gap-2 py-3 px-4 rounded-btn font-semibold text-sm transition-opacity disabled:opacity-40 sm:col-span-2"
+          style={{ backgroundColor: '#1E293B', color: '#F8FAFC', border: '1px solid #334155' }}
+        >
+          <FileText size={17} />
+          Export Recharge Log (CSV)
         </button>
       </div>
 

@@ -12,6 +12,7 @@ import Settings from './components/Settings.jsx';
 import Community from './components/Community.jsx';
 import Admin from './components/Admin.jsx';
 import Onboarding from './components/Onboarding.jsx';
+import SpendTracker from './components/SpendTracker.jsx';
 
 // ── Contexts ────────────────────────────────────────────────────────────────
 
@@ -342,6 +343,7 @@ export default function App() {
       log:       'Log',
       community: 'Community',
       analytics: 'Analytics',
+      spend:     'Spend',
       report:    'Report',
       settings:  'Settings',
       admin:     'Admin',
@@ -378,6 +380,7 @@ export default function App() {
     log:       <OutageLog />,
     community: <Community />,
     analytics: <Analytics />,
+    spend:     <SpendTracker />,
     report:    <ReportGenerator />,
     settings:  <Settings onSaved={() => setCurrentTab('dashboard')} />,
     admin:     <Admin />,

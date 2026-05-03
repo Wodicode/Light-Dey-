@@ -15,7 +15,7 @@ import {
 /**
  * Build the full complaint letter text.
  */
-export function buildComplaintLetter({ profile, outages }) {
+export function buildComplaintLetter({ profile, outages, recharges = [] }) {
   const today = new Date();
   const dateStr = today.toLocaleDateString('en-NG', {
     day: 'numeric', month: 'long', year: 'numeric',
@@ -70,6 +70,20 @@ export function buildComplaintLetter({ profile, outages }) {
   const downgradeObligation = longestStreak >= REGULATORY_TRIGGERS.CONSECUTIVE_DAYS_DOWNGRADE;
 
   // CC list
+  // Recharge summary (optional)
+  let rechargeSummary = '';
+  if (recharges.length > 0) {
+    const totalSpend = recharges.reduce((s, r) => s + (parseFloat(r.amount_naira) || 0), 0);
+    const totalKwh = recharges.reduce((s, r) => s + (parseFloat(r.kwh) || 0), 0);
+    const avgCostPerKwh = totalKwh > 0 ? (totalSpend / totalKwh).toFixed(0) : null;
+    rechargeSummary = `\nELECTRICITY SPEND SUMMARY (from PowerWatch recharge log):
+Total recharges recorded: ${recharges.length}
+Total amount spent:       ₦${totalSpend.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${totalKwh > 0 ? `\nTotal units purchased:    ${totalKwh.toFixed(1)} kWh` : ''}${avgCostPerKwh ? `\nAverage cost per unit:    ₦${avgCostPerKwh}/kWh` : ''}
+
+Despite these payments, consistent electricity supply has not been delivered in accordance with the Band ${band} minimum hours mandated by NERC.
+`;
+  }
+
   const ccList = [`NERC Abuja Forum Office — ${discoInfo.nercForumOffice?.email || 'abujaforum@nerc.gov.ng'}`];
   if (downgradeObligation) {
     ccList.push(`NERC Headquarters — ${NERC_HQ.complaintsEmail}`);
@@ -139,7 +153,7 @@ Average daily supply:         ${avgDailySupplyHours} hours/day
 Required minimum (Band ${band}): ${config.minHoursPerDay} hours/day
 Current consecutive missed-days streak: ${currentStreak} day${currentStreak !== 1 ? 's' : ''}
 Longest consecutive streak (this month): ${longestStreak} day${longestStreak !== 1 ? 's' : ''}
-
+${rechargeSummary}
 ${breachText}
 
 REGULATORY BASIS FOR THIS COMPLAINT:
@@ -175,6 +189,27 @@ CC: ${ccList.join('\nCC: ')}
 `;
 
   return letter;
+}
+
+/**
+ * Convert recharge records to CSV content string.
+ */
+export function buildRechargeCSV(recharges) {
+  const headers = ['Date', 'Amount (₦)', 'kWh', 'Cost/kWh (₦)', 'Token Number', 'Notes'];
+  const rows = recharges.map(r => {
+    const costPerKwh = r.kwh && r.amount_naira
+      ? (parseFloat(r.amount_naira) / parseFloat(r.kwh)).toFixed(2)
+      : '';
+    return [
+      r.recharge_date,
+      r.amount_naira,
+      r.kwh || '',
+      costPerKwh,
+      (r.token_number || '').replace(/,/g, ';'),
+      (r.notes || '').replace(/,/g, ';').replace(/\n/g, ' '),
+    ];
+  });
+  return [headers, ...rows].map(row => row.join(',')).join('\n');
 }
 
 /**
