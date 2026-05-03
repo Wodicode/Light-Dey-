@@ -134,27 +134,27 @@ export default function OutageLog() {
         {activeOutage ? (
           <>
             <div
-              className="rounded-card px-4 py-4 flex items-center gap-3"
+              className="rounded-card px-4 py-5 flex flex-col items-center gap-2"
               style={{ backgroundColor: '#111827', border: '1px solid rgba(229,57,53,0.35)' }}
             >
-              <span
-                className="inline-block w-2.5 h-2.5 rounded-full shrink-0 blink"
-                style={{ backgroundColor: '#E53935' }}
-              />
-              <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block w-2 h-2 rounded-full blink"
+                  style={{ backgroundColor: '#E53935' }}
+                />
                 <p className="text-xs font-bold uppercase tracking-widest" style={{ color: '#E53935' }}>
                   Outage in progress
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: '#4A5470' }}>
-                  Since {formatOutageDate(activeOutage.date)} at {formatTime(activeOutage.start_time)}
-                </p>
               </div>
               <p
-                className="text-2xl font-black tabular-nums leading-none tracking-tight shrink-0"
+                className="text-4xl font-black tabular-nums leading-none tracking-tight"
                 style={{ color: '#E53935', fontFamily: 'Syne, system-ui, sans-serif' }}
                 aria-live="polite"
               >
                 {formatElapsedSeconds(elapsed)}
+              </p>
+              <p className="text-xs" style={{ color: '#4A5470' }}>
+                Since {formatOutageDate(activeOutage.date)} at {formatTime(activeOutage.start_time)}
               </p>
             </div>
             <button
