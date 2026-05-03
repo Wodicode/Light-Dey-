@@ -169,7 +169,7 @@ export default function App() {
     if (!session?.user) return;
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
-    const timeStr = now.toTimeString().slice(0, 5);  // HH:MM
+    const timeStr = now.toTimeString().slice(0, 8);  // HH:MM:SS
     try {
       const { data, error } = await supabase
         .from('outages')

@@ -49,9 +49,9 @@ export default function OutageLog() {
     if (!activeOutage) { setElapsed(0); return; }
     const compute = () => {
       const now = new Date();
-      const [h, m] = activeOutage.start_time.split(':').map(Number);
+      const [h, m, s = 0] = activeOutage.start_time.split(':').map(Number);
       const parts = activeOutage.date.split('-').map(Number);
-      const start = new Date(parts[0], parts[1] - 1, parts[2], h, m, 0);
+      const start = new Date(parts[0], parts[1] - 1, parts[2], h, m, s);
       setElapsed(Math.max(0, Math.floor((now - start) / 1000)));
     };
     compute();
