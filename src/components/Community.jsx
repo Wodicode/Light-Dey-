@@ -10,11 +10,11 @@ function yesterdayStr() {
 }
 
 function supplyColor(hours) {
-  if (hours >= 18) return '#2ECC71';
-  if (hours >= 14) return '#27AE60';
-  if (hours >= 10) return '#F39C12';
+  if (hours >= 18) return '#00A651';
+  if (hours >= 14) return '#4caf7d';
+  if (hours >= 10) return '#F5A623';
   if (hours >= 6)  return '#E67E22';
-  return '#E74C3C';
+  return '#E53935';
 }
 
 function formatSupplyHours(h) {
@@ -25,15 +25,14 @@ function minsToHours(m) {
   return (m / 60).toFixed(1);
 }
 
-// ── Stat pill ─────────────────────────────────────────────────────────────────
 function Pill({ label, value, color }) {
   return (
     <div
       className="rounded-card p-3 flex flex-col items-center text-center"
-      style={{ backgroundColor: '#1E293B', boxShadow: '0 0 0 1px rgba(255,255,255,0.05)', flex: 1 }}
+      style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)', flex: 1 }}
     >
-      <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#475569' }}>{label}</p>
-      <p className="text-sm font-black leading-tight" style={{ color: color || '#F8FAFC' }}>{value}</p>
+      <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#4A5470' }}>{label}</p>
+      <p className="text-sm font-black leading-tight" style={{ color: color || '#F0F4FF', fontFamily: 'Syne, system-ui, sans-serif' }}>{value}</p>
     </div>
   );
 }
@@ -49,7 +48,6 @@ export default function Community() {
   const [mapReady, setMapReady]         = useState(false);
   const [selectedDate, setSelectedDate] = useState(yesterdayStr);
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchStats = useCallback(async (date) => {
     setLoading(true);
     const { data, error } = await supabase.rpc('get_community_stats', { p_date: date });
@@ -60,7 +58,6 @@ export default function Community() {
 
   useEffect(() => { fetchStats(selectedDate); }, [selectedDate, fetchStats]);
 
-  // ── Init Leaflet once ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapRef.current || !window.L || mapInstanceRef.current) return;
     const L = window.L;
@@ -77,16 +74,14 @@ export default function Community() {
       subdomains: 'abcd',
     }).addTo(map);
 
-    // Minimal attribution tucked in corner
     L.control.attribution({ prefix: false, position: 'bottomright' })
-      .addAttribution('© <a href="https://carto.com" style="color:#475569">CARTO</a>')
+      .addAttribution('© <a href="https://carto.com" style="color:#4A5470">CARTO</a>')
       .addTo(map);
 
     const layer = L.layerGroup().addTo(map);
     layerRef.current       = layer;
     mapInstanceRef.current = map;
 
-    // Force tile redraw after CSS page-enter animation completes
     setTimeout(() => map.invalidateSize(), 250);
 
     setMapReady(true);
@@ -99,7 +94,6 @@ export default function Community() {
     };
   }, []);
 
-  // ── Redraw markers whenever data or mapReady changes ──────────────────────
   useEffect(() => {
     if (!mapReady || !layerRef.current || !window.L) return;
     const L     = window.L;
@@ -129,12 +123,12 @@ export default function Community() {
             <p class="pw-popup-title">${lga.name}</p>
             <p class="pw-popup-sub">${lga.state} · ${lga.disco}</p>
             <div class="pw-popup-rows">
-              <span style="color:#94A3B8">Avg supply</span>
+              <span style="color:#8B95B0">Avg supply</span>
               <span style="color:${color};font-weight:700">${formatSupplyHours(supplyHours)}</span>
-              <span style="color:#94A3B8">Reporters</span>
-              <span style="color:#F8FAFC;font-weight:600">${s.reporter_count}</span>
-              <span style="color:#94A3B8">Worst outage</span>
-              <span style="color:#E74C3C;font-weight:600">${minsToHours(s.max_outage_minutes)}h</span>
+              <span style="color:#8B95B0">Reporters</span>
+              <span style="color:#F0F4FF;font-weight:600">${s.reporter_count}</span>
+              <span style="color:#8B95B0">Worst outage</span>
+              <span style="color:#E53935;font-weight:600">${minsToHours(s.max_outage_minutes)}h</span>
             </div>
           </div>`,
           { className: 'pw-leaflet-popup' }
@@ -142,18 +136,17 @@ export default function Community() {
 
         layer.addLayer(marker);
       } else {
-        // Dim placeholder for LGAs with no data
         const marker = L.circleMarker([lga.lat, lga.lng], {
           radius:      4,
-          fillColor:   '#1E293B',
+          fillColor:   '#111827',
           fillOpacity: 0.7,
-          color:       '#334155',
+          color:       'rgba(255,255,255,0.08)',
           weight:      1,
         });
         marker.bindPopup(
           `<div class="pw-popup">
             <p class="pw-popup-title">${lga.name}</p>
-            <p class="pw-popup-sub" style="color:#334155">${lga.state} · No data for this date</p>
+            <p class="pw-popup-sub" style="color:#4A5470">${lga.state} · No data for this date</p>
           </div>`,
           { className: 'pw-leaflet-popup' }
         );
@@ -162,7 +155,6 @@ export default function Community() {
     });
   }, [stats, mapReady]);
 
-  // ── Date options — yesterday + 6 prior days ────────────────────────────────
   const dateOptions = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - 1 - i);
@@ -173,7 +165,6 @@ export default function Community() {
     return { value, label };
   });
 
-  // ── Derived ────────────────────────────────────────────────────────────────
   const totalReporters = stats.reduce((s, d) => s + d.reporter_count, 0);
   const sorted         = [...stats].sort((a, b) => parseFloat(a.avg_supply_hours) - parseFloat(b.avg_supply_hours));
   const worstLGA       = sorted[0]    ?? null;
@@ -182,14 +173,21 @@ export default function Community() {
 
   return (
     <div className="flex flex-col gap-0 pb-24">
-      {/* ── Header ── */}
       <div className="px-4 pt-6 pb-3 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#475569' }}>
+          <p
+            className="text-xs font-black uppercase tracking-widest mb-1"
+            style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
+          >
             Community
           </p>
-          <h1 className="text-xl font-black text-textPrimary leading-none">Outage Map</h1>
-          <p className="text-xs mt-1" style={{ color: '#475569' }}>
+          <h1
+            className="text-xl font-black text-textPrimary leading-none"
+            style={{ fontFamily: 'Syne, system-ui, sans-serif' }}
+          >
+            Outage Map
+          </h1>
+          <p className="text-xs mt-1" style={{ color: '#4A5470' }}>
             Crowd-sourced supply data across Nigeria
           </p>
         </div>
@@ -197,7 +195,7 @@ export default function Community() {
           value={selectedDate}
           onChange={e => setSelectedDate(e.target.value)}
           className="text-xs font-semibold px-3 py-1.5 rounded-btn shrink-0"
-          style={{ backgroundColor: '#1E293B', border: '1px solid #334155', color: '#94A3B8' }}
+          style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)', color: '#8B95B0' }}
         >
           {dateOptions.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -205,22 +203,20 @@ export default function Community() {
         </select>
       </div>
 
-      {/* ── Pills ── */}
       <div className="px-4 pb-3 flex gap-2">
-        <Pill label="Reporters" value={loading ? '…' : totalReporters} color="#2ECC71" />
+        <Pill label="Reporters" value={loading ? '…' : totalReporters} color="#00A651" />
         <Pill
           label="Worst Area"
           value={loading ? '…' : (worstLGA ? worstLGA.lga : '—')}
-          color={worstLGA ? '#E74C3C' : '#475569'}
+          color={worstLGA ? '#E53935' : '#4A5470'}
         />
         <Pill
           label="Best Area"
           value={loading ? '…' : (bestLGA ? bestLGA.lga : '—')}
-          color={bestLGA ? '#2ECC71' : '#475569'}
+          color={bestLGA ? '#00A651' : '#4A5470'}
         />
       </div>
 
-      {/* ── Map ── */}
       <div className="px-4">
         <div
           style={{
@@ -233,7 +229,6 @@ export default function Community() {
         >
           <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
 
-          {/* Loading veil */}
           {loading && (
             <div
               style={{
@@ -242,7 +237,7 @@ export default function Community() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
-              <p className="text-sm font-semibold" style={{ color: '#94A3B8' }}>
+              <p className="text-sm font-semibold" style={{ color: '#8B95B0' }}>
                 Loading community data…
               </p>
             </div>
@@ -250,44 +245,42 @@ export default function Community() {
         </div>
       </div>
 
-      {/* ── Legend ── */}
       <div className="px-4 pt-2 pb-1 flex justify-end gap-3 flex-wrap">
         {[
-          { color: '#2ECC71', label: '18+ h' },
-          { color: '#F39C12', label: '10–18 h' },
-          { color: '#E74C3C', label: '< 10 h' },
-          { color: '#334155', label: 'No data' },
+          { color: '#00A651', label: '18+ h' },
+          { color: '#F5A623', label: '10–18 h' },
+          { color: '#E53935', label: '< 10 h' },
+          { color: 'rgba(255,255,255,0.1)', label: 'No data' },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1">
             <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: color }} />
-            <span className="text-xs" style={{ color: '#475569' }}>{label}</span>
+            <span className="text-xs" style={{ color: '#4A5470' }}>{label}</span>
           </div>
         ))}
       </div>
 
-      {/* ── Most affected LGAs ── */}
       <div className="px-4 pt-2">
         {!loading && !hasData ? (
           <div className="py-10 text-center">
             <p className="text-3xl mb-3">📡</p>
             <p className="font-black text-textPrimary mb-1">No reports for this date</p>
-            <p className="text-xs leading-relaxed" style={{ color: '#475569' }}>
+            <p className="text-xs leading-relaxed" style={{ color: '#4A5470' }}>
               Enable community reporting in{' '}
-              <span className="font-semibold" style={{ color: '#F8FAFC' }}>Settings → Community</span>{' '}
+              <span className="font-semibold" style={{ color: '#F0F4FF' }}>Settings → Community</span>{' '}
               to contribute your anonymised outage data.
             </p>
           </div>
         ) : hasData ? (
           <>
             <p
-              className="text-xs font-bold uppercase tracking-widest mb-3"
-              style={{ color: '#475569' }}
+              className="text-xs font-black uppercase tracking-widest mb-3"
+              style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
             >
               Most Affected LGAs
             </p>
             <div
               className="rounded-card overflow-hidden"
-              style={{ backgroundColor: '#1E293B', boxShadow: '0 0 0 1px rgba(255,255,255,0.05)' }}
+              style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}
             >
               {sorted.slice(0, 10).map((s, i) => {
                 const supplyHours = parseFloat(s.avg_supply_hours);
@@ -310,15 +303,15 @@ export default function Community() {
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-textPrimary truncate">{s.lga}</p>
-                      <p className="text-xs" style={{ color: '#475569' }}>
+                      <p className="text-xs" style={{ color: '#4A5470' }}>
                         {s.reporter_count} reporter{s.reporter_count !== 1 ? 's' : ''}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-black tabular-nums" style={{ color }}>
+                      <p className="text-sm font-black tabular-nums" style={{ color, fontFamily: 'Syne, system-ui, sans-serif' }}>
                         {formatSupplyHours(supplyHours)}
                       </p>
-                      <p className="text-xs" style={{ color: '#475569' }}>avg supply</p>
+                      <p className="text-xs" style={{ color: '#4A5470' }}>avg supply</p>
                     </div>
                   </div>
                 );
@@ -328,22 +321,21 @@ export default function Community() {
         ) : null}
       </div>
 
-      {/* ── Contribute prompt ── */}
       {(!profile?.community_opt_in || !profile?.lga) && (
         <div className="px-4 pt-4">
           <div
             className="rounded-card p-4"
             style={{
-              backgroundColor: '#1E293B',
-              borderLeft: '3px solid #2ECC71',
-              boxShadow: '0 0 0 1px rgba(46,204,113,0.12)',
+              backgroundColor: '#111827',
+              borderLeft: '3px solid #00A651',
+              boxShadow: '0 0 0 1px rgba(0,166,81,0.12)',
             }}
           >
             <p className="text-sm font-black text-textPrimary mb-1">Help build the map</p>
-            <p className="text-xs leading-relaxed" style={{ color: '#94A3B8' }}>
+            <p className="text-xs leading-relaxed" style={{ color: '#8B95B0' }}>
               Share your anonymous outage data — only your LGA and daily outage hours are
               submitted, never personal details. Enable it in{' '}
-              <span className="font-semibold" style={{ color: '#F8FAFC' }}>
+              <span className="font-semibold" style={{ color: '#F0F4FF' }}>
                 Settings → Community Reporting
               </span>.
             </p>

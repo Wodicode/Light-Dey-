@@ -8,10 +8,10 @@ const DISCOS = ['AEDC', 'EKEDC', 'IE', 'PHED', 'EEDC', 'IBEDC', 'BeDE', 'KEDCO',
 const BANDS  = ['A', 'B', 'C', 'D', 'E'];
 
 const inputClass = 'w-full px-3 py-2.5 rounded-btn text-sm text-textPrimary placeholder-textMuted/50 outline-none focus:ring-2 focus:ring-accent';
-const inputStyle = { backgroundColor: '#0F172A', border: '1px solid #334155' };
+const inputStyle = { backgroundColor: '#0B0F1A', border: '1px solid rgba(255,255,255,0.1)' };
 const labelClass = 'block text-sm font-medium text-textMuted mb-1';
-const sectionStyle = { backgroundColor: '#1E293B', border: '1px solid #334155' };
-const dimText = { color: '#475569' };
+const sectionStyle = { backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)' };
+const dimText = { color: '#4A5470' };
 
 function formatPhone(raw) {
   if (!raw) return null;
@@ -81,7 +81,7 @@ function LGACombobox({ value, onChange }) {
       {open && (
         <div
           className="absolute z-50 w-full mt-1 rounded-btn overflow-y-auto"
-          style={{ backgroundColor: '#0F172A', border: '1px solid #334155', maxHeight: 200 }}
+          style={{ backgroundColor: '#0B0F1A', border: '1px solid rgba(255,255,255,0.1)', maxHeight: 200 }}
         >
           {groupedStates.length === 0 ? (
             <div className="px-3 py-2 text-sm" style={dimText}>No results</div>
@@ -90,7 +90,7 @@ function LGACombobox({ value, onChange }) {
               <div key={state}>
                 <div
                   className="px-3 py-1 text-xs font-semibold uppercase tracking-wide sticky top-0"
-                  style={{ color: '#94A3B8', backgroundColor: '#0F172A' }}
+                  style={{ color: '#8B95B0', backgroundColor: '#0B0F1A' }}
                 >
                   {state}
                 </div>
@@ -118,8 +118,8 @@ function SectionSaveButton({ saving, label }) {
     <button
       type="submit"
       disabled={saving}
-      className="w-full py-3 rounded-btn font-semibold text-sm transition-opacity disabled:opacity-60"
-      style={{ backgroundColor: '#2ECC71', color: '#0F172A' }}
+      className="w-full py-3 rounded-btn font-semibold text-sm transition-opacity disabled:opacity-60 btn-glow"
+      style={{ background: 'linear-gradient(180deg, #00A651 0%, #008f47 100%)', color: '#001a0f' }}
     >
       {saving ? 'Saving…' : label}
     </button>
@@ -156,7 +156,12 @@ function PersonalSection({ profile, saveProfile, showToast, onSaved }) {
 
   return (
     <form onSubmit={handleSave} className="rounded-card p-4 flex flex-col gap-4" style={sectionStyle}>
-      <h3 className="text-sm font-semibold text-textMuted uppercase tracking-wide">Personal Details</h3>
+      <h3
+        className="text-sm font-black uppercase tracking-widest"
+        style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
+      >
+        Personal Details
+      </h3>
       <div>
         <label className={labelClass}>Full Name</label>
         <input className={inputClass} style={inputStyle} type="text" placeholder="e.g. Amara Okafor" value={form.full_name} onChange={set('full_name')} />
@@ -204,7 +209,12 @@ function CommunitySection({ profile, saveProfile, showToast }) {
 
   return (
     <form onSubmit={handleSave} className="rounded-card p-4 flex flex-col gap-4" style={sectionStyle}>
-      <h3 className="text-sm font-semibold text-textMuted uppercase tracking-wide">Community Reporting</h3>
+      <h3
+        className="text-sm font-black uppercase tracking-widest"
+        style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
+      >
+        Community Reporting
+      </h3>
       <p className="text-xs leading-relaxed" style={dimText}>
         Contribute anonymised outage data to the community map. Only your LGA and daily outage minutes are shared — your name, address, and account details are never included.
       </p>
@@ -217,11 +227,11 @@ function CommunitySection({ profile, saveProfile, showToast }) {
       >
         <div
           className="relative shrink-0 rounded-full transition-colors duration-200"
-          style={{ width: 44, height: 24, backgroundColor: communityOptIn ? '#2ECC71' : '#334155' }}
+          style={{ width: 44, height: 24, backgroundColor: communityOptIn ? '#00A651' : 'rgba(255,255,255,0.1)' }}
         >
           <div
             className="absolute top-0.5 rounded-full transition-transform duration-200"
-            style={{ width: 20, height: 20, backgroundColor: '#F8FAFC', transform: communityOptIn ? 'translateX(22px)' : 'translateX(2px)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+            style={{ width: 20, height: 20, backgroundColor: '#F0F4FF', transform: communityOptIn ? 'translateX(22px)' : 'translateX(2px)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
           />
         </div>
         <div>
@@ -230,7 +240,7 @@ function CommunitySection({ profile, saveProfile, showToast }) {
         </div>
       </button>
       {communityOptIn && !profileLga && (
-        <p className="text-xs px-3 py-2 rounded-btn" style={{ backgroundColor: '#F39C1215', color: '#fbbf24', border: '1px solid #F39C1230' }}>
+        <p className="text-xs px-3 py-2 rounded-btn" style={{ backgroundColor: 'rgba(245,166,35,0.08)', color: '#fbbf24', border: '1px solid rgba(245,166,35,0.19)' }}>
           Save your LGA in Personal Details above to start contributing.
         </p>
       )}
@@ -244,12 +254,17 @@ function DiscoContactCard({ discoInfo }) {
 
   return (
     <div className="rounded-card p-4 flex flex-col gap-3" style={sectionStyle}>
-      <h3 className="text-sm font-semibold text-textMuted uppercase tracking-wide">{discoInfo.name}</h3>
+      <h3
+        className="text-sm font-black uppercase tracking-widest"
+        style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
+      >
+        {discoInfo.name}
+      </h3>
       <address style={{ fontStyle: 'normal' }}>
         <dl className="flex flex-col gap-2">
           {discoInfo.phone && (
             <div>
-              <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#94A3B8' }}>Phone</dt>
+              <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#8B95B0' }}>Phone</dt>
               <dd className="text-sm text-textPrimary">
                 <a href={`tel:${formatPhone(discoInfo.phone)}`} className="hover:underline">{discoInfo.phone}</a>
               </dd>
@@ -257,7 +272,7 @@ function DiscoContactCard({ discoInfo }) {
           )}
           {discoInfo.whatsapp && discoInfo.whatsapp.length > 0 && (
             <div>
-              <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#94A3B8' }}>WhatsApp</dt>
+              <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#8B95B0' }}>WhatsApp</dt>
               <dd className="text-sm text-textPrimary flex flex-col gap-0.5">
                 {discoInfo.whatsapp.map(num => (
                   <a key={num} href={`https://wa.me/${formatWhatsApp(num)}`} className="hover:underline">{num}</a>
@@ -267,7 +282,7 @@ function DiscoContactCard({ discoInfo }) {
           )}
           {discoInfo.email && (
             <div>
-              <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#94A3B8' }}>Email</dt>
+              <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#8B95B0' }}>Email</dt>
               <dd className="text-sm text-textPrimary">
                 <a href={`mailto:${discoInfo.email}`} className="hover:underline">{discoInfo.email}</a>
               </dd>
@@ -275,15 +290,15 @@ function DiscoContactCard({ discoInfo }) {
           )}
           {discoInfo.address && (
             <div>
-              <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#94A3B8' }}>Office Address</dt>
+              <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#8B95B0' }}>Office Address</dt>
               <dd className="text-sm text-textPrimary">{discoInfo.address}</dd>
             </div>
           )}
           {discoInfo.complaintPortal && (
             <div>
-              <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#94A3B8' }}>Complaint Portal</dt>
+              <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#8B95B0' }}>Complaint Portal</dt>
               <dd className="text-sm">
-                <a href={discoInfo.complaintPortal} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#2ECC71' }}>
+                <a href={discoInfo.complaintPortal} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#00A651' }}>
                   {discoInfo.complaintPortal}
                 </a>
               </dd>
@@ -294,20 +309,20 @@ function DiscoContactCard({ discoInfo }) {
 
       {discoInfo.nercForumOffice && (
         <>
-          <div style={{ borderTop: '1px solid #334155' }} />
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} />
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#94A3B8' }}>NERC Forum Office</h4>
+            <h4 className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#8B95B0' }}>NERC Forum Office</h4>
             <address style={{ fontStyle: 'normal' }}>
               <dl className="flex flex-col gap-2">
                 {discoInfo.nercForumOffice.address && (
                   <div>
-                    <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#94A3B8' }}>Address</dt>
+                    <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#8B95B0' }}>Address</dt>
                     <dd className="text-sm text-textPrimary">{discoInfo.nercForumOffice.address}</dd>
                   </div>
                 )}
                 {discoInfo.nercForumOffice.phone && (
                   <div>
-                    <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#94A3B8' }}>Phone</dt>
+                    <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#8B95B0' }}>Phone</dt>
                     <dd className="text-sm text-textPrimary">
                       <a href={`tel:${formatPhone(discoInfo.nercForumOffice.phone)}`} className="hover:underline">{discoInfo.nercForumOffice.phone}</a>
                     </dd>
@@ -315,7 +330,7 @@ function DiscoContactCard({ discoInfo }) {
                 )}
                 {discoInfo.nercForumOffice.email && (
                   <div>
-                    <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#94A3B8' }}>Email</dt>
+                    <dt className="text-xs uppercase tracking-wide mb-0.5" style={{ color: '#8B95B0' }}>Email</dt>
                     <dd className="text-sm text-textPrimary">
                       <a href={`mailto:${discoInfo.nercForumOffice.email}`} className="hover:underline">{discoInfo.nercForumOffice.email}</a>
                     </dd>
@@ -361,7 +376,12 @@ function ElectricitySection({ profile, saveProfile, showToast }) {
   return (
     <>
       <form onSubmit={handleSave} className="rounded-card p-4 flex flex-col gap-4" style={sectionStyle}>
-        <h3 className="text-sm font-semibold text-textMuted uppercase tracking-wide">Electricity Account</h3>
+        <h3
+          className="text-sm font-black uppercase tracking-widest"
+          style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
+        >
+          Electricity Account
+        </h3>
         <div>
           <label className={labelClass}>Distribution Company (DisCo)</label>
           <select className={inputClass} style={inputStyle} value={form.disco} onChange={set('disco')}>
@@ -376,7 +396,7 @@ function ElectricitySection({ profile, saveProfile, showToast }) {
               onClick={() => setBandInfoOpen(v => !v)}
               aria-label="Service band information"
               className="flex items-center justify-center rounded-full text-xs font-bold shrink-0 transition-colors"
-              style={{ width: 18, height: 18, border: '1px solid #475569', color: '#94A3B8', backgroundColor: 'transparent', lineHeight: 1 }}
+              style={{ width: 18, height: 18, border: '1px solid #4A5470', color: '#8B95B0', backgroundColor: 'transparent', lineHeight: 1 }}
             >
               i
             </button>
@@ -385,7 +405,7 @@ function ElectricitySection({ profile, saveProfile, showToast }) {
             {BANDS.map(b => <option key={b} value={b}>Band {b}</option>)}
           </select>
           {bandInfoOpen && (
-            <div className="mt-2 px-3 py-2.5 rounded-btn text-xs leading-relaxed" style={{ backgroundColor: '#F39C1210', border: '1px solid #F39C1230', color: '#fbbf24' }}>
+            <div className="mt-2 px-3 py-2.5 rounded-btn text-xs leading-relaxed" style={{ backgroundColor: 'rgba(245,166,35,0.06)', border: '1px solid rgba(245,166,35,0.19)', color: '#fbbf24' }}>
               <p className="mb-1">Your DisCo is legally required to supply the minimum daily hours for your band. Missing the target means you're entitled to compensation under NERC regulations.</p>
               <p className="font-semibold">Band A: 20h/day | Band B: 16h | Band C: 12h | Band D: 8h | Band E: 4h</p>
             </div>
@@ -415,9 +435,14 @@ export default function Settings({ onSaved }) {
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto">
-      <h2 className="text-xl font-bold text-textPrimary mb-6">Settings</h2>
+      <h2
+        className="text-xl font-black text-textPrimary mb-6"
+        style={{ fontFamily: 'Syne, system-ui, sans-serif' }}
+      >
+        Settings
+      </h2>
       {!profile && (
-        <div className="mb-4 px-4 py-3 rounded-btn text-sm" style={{ backgroundColor: '#F39C1222', border: '1px solid #F39C12', color: '#fbbf24' }}>
+        <div className="mb-4 px-4 py-3 rounded-btn text-sm" style={{ backgroundColor: 'rgba(245,166,35,0.13)', border: '1px solid #F5A623', color: '#fbbf24' }}>
           Complete your profile to get started with personalised tracking.
         </div>
       )}
@@ -430,7 +455,7 @@ export default function Settings({ onSaved }) {
         <button
           onClick={() => supabase.auth.signOut()}
           className="w-full py-3 rounded-btn font-semibold text-sm transition-opacity"
-          style={{ backgroundColor: '#7f1d1d22', border: '1px solid #7f2d2d', color: '#fca5a5' }}
+          style={{ backgroundColor: 'rgba(127,29,29,0.13)', border: '1px solid rgba(127,45,45,0.5)', color: '#fca5a5' }}
         >
           Sign Out
         </button>
