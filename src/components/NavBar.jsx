@@ -1,14 +1,17 @@
 import React from 'react';
-import { Home, List, BarChart2, FileText } from 'lucide-react';
+import { Home, List, BarChart2, FileText, Shield } from 'lucide-react';
 
-const TABS = [
+const BASE_TABS = [
   { id: 'dashboard', label: 'Dashboard', Icon: Home },
   { id: 'log',       label: 'Log',       Icon: List },
   { id: 'analytics', label: 'Analytics', Icon: BarChart2 },
   { id: 'report',    label: 'Report',    Icon: FileText },
 ];
 
-export default function NavBar({ currentTab, onTabChange }) {
+const ADMIN_TAB = { id: 'admin', label: 'Admin', Icon: Shield };
+
+export default function NavBar({ currentTab, onTabChange, isAdmin }) {
+  const TABS = isAdmin ? [...BASE_TABS, ADMIN_TAB] : BASE_TABS;
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch px-1"

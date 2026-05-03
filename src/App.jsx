@@ -8,6 +8,7 @@ import OutageLog from './components/OutageLog.jsx';
 import Analytics from './components/Analytics.jsx';
 import ReportGenerator from './components/ReportGenerator.jsx';
 import Settings from './components/Settings.jsx';
+import Admin from './components/Admin.jsx';
 
 // ── Contexts ────────────────────────────────────────────────────────────────
 
@@ -300,12 +301,15 @@ export default function App() {
     return <AuthScreen />;
   }
 
+  const isAdmin = session?.user?.app_metadata?.is_admin === true;
+
   const tabContent = {
     dashboard: <Dashboard />,
     log: <OutageLog />,
     analytics: <Analytics />,
     report: <ReportGenerator />,
     settings: <Settings onSaved={() => setCurrentTab('dashboard')} />,
+    admin: <Admin />,
   };
 
   return (
@@ -365,7 +369,7 @@ export default function App() {
 
             {/* Bottom nav */}
             {currentTab !== 'settings' && (
-              <NavBar currentTab={currentTab} onTabChange={setCurrentTab} />
+              <NavBar currentTab={currentTab} onTabChange={setCurrentTab} isAdmin={isAdmin} />
             )}
           </div>
           <Toast toasts={toasts} />
