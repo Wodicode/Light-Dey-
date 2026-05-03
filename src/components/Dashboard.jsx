@@ -107,6 +107,10 @@ function SectionHeading({ children, badge, badgeColor }) {
   );
 }
 
+function currentMonthName() {
+  return new Date().toLocaleDateString('en-NG', { month: 'long' });
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { profile } = useProfile();
@@ -256,7 +260,7 @@ export default function Dashboard() {
           <StatCard
             label="Days on Target"
             value={`${monthStats.daysMetThreshold}`}
-            sub={`of ${monthStats.days.length} days above Band ${band} min`}
+            sub={`of ${monthStats.days.length} days in ${currentMonthName()} so far`}
             color="#00A651"
           />
           <StatCard
@@ -264,9 +268,9 @@ export default function Dashboard() {
             value={`${monthStats.daysMissedThreshold}`}
             sub={
               complaintReadiness.ready
-                ? 'Enough to file a complaint'
+                ? 'Enough to file a complaint ✓'
                 : monthStats.daysMissedThreshold === 0
-                  ? 'none this month'
+                  ? `none in ${currentMonthName()} yet`
                   : `${Math.max(0, 5 - monthStats.daysMissedThreshold)} more needed to complain`
             }
             color={monthStats.daysMissedThreshold > 0 ? '#E53935' : '#00A651'}
