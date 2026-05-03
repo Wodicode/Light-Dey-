@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PowerWatch Nigeria</title>
-    <meta name="theme-color" content="#0F172A" />
+    <meta name="theme-color" content="#0B0F1A" />
     <meta name="description" content="Track your electricity supply, know your NERC rights, and generate formal complaint letters when your DisCo falls short." />
     <meta property="og:title" content="PowerWatch Nigeria" />
     <meta property="og:description" content="Track outages, measure supply hours, and hold your DisCo accountable." />
@@ -12,7 +12,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
 
     <!-- Leaflet -->
     <link
@@ -32,21 +32,23 @@
         theme: {
           extend: {
             colors: {
-              bg: '#0F172A',
-              surface: '#1E293B',
-              accent: '#2ECC71',
-              danger: '#E74C3C',
-              warning: '#F39C12',
-              textPrimary: '#F8FAFC',
-              textMuted: '#94A3B8',
-              border: '#334155',
+              bg:          '#0B0F1A',
+              surface:     '#111827',
+              surface2:    '#1a2235',
+              accent:      '#00A651',
+              danger:      '#E53935',
+              warning:     '#F5A623',
+              textPrimary: '#F0F4FF',
+              textMuted:   '#8B95B0',
+              textDim:     '#4A5470',
             },
             fontFamily: {
-              sans: ['Inter', 'system-ui', 'sans-serif'],
+              sans:    ['"DM Sans"', 'system-ui', 'sans-serif'],
+              display: ['Syne', 'system-ui', 'sans-serif'],
             },
             borderRadius: {
-              card: '12px',
-              btn: '8px',
+              card: '16px',
+              btn:  '10px',
             },
           },
         },
@@ -64,11 +66,21 @@
       html { scroll-behavior: smooth; }
 
       body {
-        font-family: 'Inter', system-ui, sans-serif;
-        background-color: #0F172A;
-        color: #F8FAFC;
+        font-family: 'DM Sans', system-ui, sans-serif;
+        background-color: #0B0F1A;
+        color: #F0F4FF;
         -webkit-tap-highlight-color: transparent;
         -webkit-font-smoothing: antialiased;
+      }
+
+      /* ── Grid texture ─────────────────────────────────────────────── */
+      body::before {
+        content: '';
+        position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        background-image:
+          linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+        background-size: 40px 40px;
       }
 
       /* ── Page transition ──────────────────────────────────────────── */
@@ -93,13 +105,13 @@
       @keyframes outage-pulse {
         0%, 100% {
           box-shadow:
-            0 0 0 0 rgba(231, 76, 60, 0.45),
-            0 6px 32px rgba(231, 76, 60, 0.25);
+            0 0 0 0 rgba(229, 57, 53, 0.45),
+            0 6px 32px rgba(229, 57, 53, 0.25);
         }
         50% {
           box-shadow:
-            0 0 0 14px rgba(231, 76, 60, 0),
-            0 6px 32px rgba(231, 76, 60, 0.08);
+            0 0 0 14px rgba(229, 57, 53, 0),
+            0 6px 32px rgba(229, 57, 53, 0.08);
         }
       }
       .btn-outage {
@@ -112,13 +124,13 @@
       @keyframes restore-pulse {
         0%, 100% {
           box-shadow:
-            0 0 0 0 rgba(46, 204, 113, 0.45),
-            0 6px 32px rgba(46, 204, 113, 0.25);
+            0 0 0 0 rgba(0, 166, 81, 0.45),
+            0 6px 32px rgba(0, 166, 81, 0.25);
         }
         50% {
           box-shadow:
-            0 0 0 14px rgba(46, 204, 113, 0),
-            0 6px 32px rgba(46, 204, 113, 0.08);
+            0 0 0 14px rgba(0, 166, 81, 0),
+            0 6px 32px rgba(0, 166, 81, 0.08);
         }
       }
       .btn-restore {
@@ -149,12 +161,7 @@
         100% { background-position:  200% 0; }
       }
       .skeleton {
-        background: linear-gradient(
-          90deg,
-          #1E293B 25%,
-          #263447 50%,
-          #1E293B 75%
-        );
+        background: linear-gradient(90deg, #111827 25%, #1a2235 50%, #111827 75%);
         background-size: 200% 100%;
         animation: shimmer 1.6s ease-in-out infinite;
         border-radius: 6px;
@@ -179,29 +186,79 @@
       }
       .btn-press:active { transform: scale(0.97); opacity: 0.9; }
 
+      /* ── Stagger fade-up for dashboard items ──────────────────────── */
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .fade-up { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+      .fade-up-1 { animation-delay: 80ms; }
+      .fade-up-2 { animation-delay: 160ms; }
+      .fade-up-3 { animation-delay: 240ms; }
+
+      /* ── Status dot pulse ─────────────────────────────────────────── */
+      @keyframes statusPulse {
+        0%,100% { opacity: 1; }
+        50%     { opacity: 0.35; }
+      }
+      .status-pulse { animation: statusPulse 2s ease-in-out infinite; }
+
+      /* ── Map ping ─────────────────────────────────────────────────── */
+      @keyframes mapPing {
+        0%   { transform: scale(1); opacity: 0.8; }
+        100% { transform: scale(2.8); opacity: 0; }
+      }
+
+      /* ── Status badge pill ────────────────────────────────────────── */
+      .badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        border-radius: 100px; padding: 3px 10px;
+        font-size: 11px; font-weight: 700;
+        white-space: nowrap; font-family: 'DM Sans', system-ui, sans-serif;
+      }
+
+      /* ── Primary glow button ──────────────────────────────────────── */
+      .btn-glow {
+        box-shadow: 0 0 24px rgba(0,166,81,0.28), 0 1px 0 rgba(255,255,255,0.1) inset;
+        transition: box-shadow 0.2s ease, transform 0.1s ease;
+      }
+      .btn-glow:hover {
+        box-shadow: 0 0 36px rgba(0,166,81,0.4), 0 1px 0 rgba(255,255,255,0.1) inset;
+      }
+
+      /* ── Card hover lift with green border ───────────────────────── */
+      .card-hover {
+        transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+      }
+      .card-hover:hover {
+        background: rgba(255,255,255,0.06) !important;
+        border-color: rgba(0,166,81,0.28) !important;
+        transform: translateY(-1px);
+      }
+
       /* ── Leaflet dark theme ───────────────────────────────────────── */
       .leaflet-container {
-        background: #0F172A;
-        font-family: 'Inter', system-ui, sans-serif;
+        background: #0B0F1A;
+        font-family: 'DM Sans', system-ui, sans-serif;
       }
       .leaflet-bar a,
       .leaflet-bar a:hover {
-        background-color: #1E293B !important;
-        border-color: #334155 !important;
-        color: #F8FAFC !important;
+        background-color: #111827 !important;
+        border-color: rgba(255,255,255,0.1) !important;
+        color: #F0F4FF !important;
       }
-      .leaflet-bar a:hover { background-color: #263347 !important; }
+      .leaflet-bar a:hover { background-color: #1a2235 !important; }
       .leaflet-control-attribution {
-        background: rgba(10,17,33,0.75) !important;
-        color: #334155 !important;
+        background: rgba(11,15,26,0.75) !important;
+        color: rgba(255,255,255,0.1) !important;
         font-size: 9px !important;
         padding: 2px 6px !important;
         border-radius: 4px !important;
       }
-      .leaflet-control-attribution a { color: #334155 !important; }
+      .leaflet-control-attribution a { color: rgba(255,255,255,0.1) !important; }
       /* Popup shell */
       .pw-leaflet-popup .leaflet-popup-content-wrapper {
-        background: #1E293B !important;
+        background: #111827 !important;
         border: 1px solid rgba(255,255,255,0.08) !important;
         border-radius: 10px !important;
         box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
@@ -210,15 +267,15 @@
       .pw-leaflet-popup .leaflet-popup-content { margin: 0 !important; }
       .pw-leaflet-popup .leaflet-popup-tip-container { display: none !important; }
       .pw-leaflet-popup .leaflet-popup-close-button {
-        color: #475569 !important;
+        color: #4A5470 !important;
         font-size: 16px !important;
         top: 5px !important;
         right: 7px !important;
       }
       /* Popup content helpers */
       .pw-popup { padding: 12px 14px; min-width: 160px; }
-      .pw-popup-title { font-size: 13px; font-weight: 700; color: #F8FAFC; margin: 0 0 3px; }
-      .pw-popup-sub   { font-size: 11px; color: #475569; margin: 0 0 8px; }
+      .pw-popup-title { font-size: 13px; font-weight: 700; color: #F0F4FF; margin: 0 0 3px; }
+      .pw-popup-sub   { font-size: 11px; color: #4A5470; margin: 0 0 8px; }
       .pw-popup-rows  {
         display: grid;
         grid-template-columns: 1fr auto;

@@ -41,16 +41,24 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
       className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 z-40"
       style={{
         width: 220,
-        backgroundColor: 'rgba(10,17,33,0.98)',
+        backgroundColor: 'rgba(11,15,26,0.96)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        borderRight: '1px solid rgba(51,65,85,0.5)',
+        borderRight: '1px solid rgba(255,255,255,0.06)',
       }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 h-14 shrink-0" style={{ borderBottom: '1px solid rgba(51,65,85,0.4)' }}>
+      <div className="flex items-center gap-2.5 px-5 h-14 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <span className="text-lg" aria-hidden>⚡</span>
-        <span className="font-black text-base tracking-tight text-textPrimary">PowerWatch</span>
+        <span
+          style={{
+            fontFamily: 'Syne, system-ui, sans-serif',
+            fontWeight: 800,
+            color: '#F0F4FF',
+            fontSize: 15,
+            letterSpacing: '-0.01em',
+          }}
+        >PowerWatch</span>
       </div>
 
       <div className="flex flex-col gap-1 pt-3 px-2 flex-1">
@@ -62,8 +70,8 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
               onClick={() => onTabChange(id)}
               className="nav-tab relative flex items-center gap-3 w-full px-3 py-2.5 rounded-btn text-left"
               style={{
-                color: active ? '#2ECC71' : '#6B7280',
-                backgroundColor: active ? 'rgba(46,204,113,0.10)' : 'transparent',
+                color: active ? '#00A651' : '#4A5470',
+                backgroundColor: active ? 'rgba(0,166,81,0.1)' : 'transparent',
               }}
               aria-label={label}
             >
@@ -71,12 +79,12 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
               {active && (
                 <div
                   className="absolute left-0 top-1 bottom-1 rounded-full"
-                  style={{ width: 3, backgroundColor: '#2ECC71' }}
+                  style={{ width: 3, backgroundColor: '#00A651' }}
                 />
               )}
               <Icon size={18} strokeWidth={active ? 2.5 : 1.7} />
               <span className="text-sm" style={{ fontWeight: active ? 700 : 500 }}>{label}</span>
-              {hasBadge(id) && <BadgeDot color={id === 'report' ? '#2ECC71' : '#F39C12'} />}
+              {hasBadge(id) && <BadgeDot color={id === 'report' ? '#00A651' : '#F5A623'} />}
             </button>
           );
         })}
@@ -87,13 +95,13 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
           onClick={() => onTabChange('settings')}
           className="nav-tab relative flex items-center gap-3 w-full px-3 py-2.5 rounded-btn text-left"
           style={{
-            color: currentTab === 'settings' ? '#2ECC71' : '#6B7280',
-            backgroundColor: currentTab === 'settings' ? 'rgba(46,204,113,0.10)' : 'transparent',
+            color: currentTab === 'settings' ? '#00A651' : '#4A5470',
+            backgroundColor: currentTab === 'settings' ? 'rgba(0,166,81,0.1)' : 'transparent',
           }}
           aria-label="Settings"
         >
           {currentTab === 'settings' && (
-            <div className="absolute left-0 top-1 bottom-1 rounded-full" style={{ width: 3, backgroundColor: '#2ECC71' }} />
+            <div className="absolute left-0 top-1 bottom-1 rounded-full" style={{ width: 3, backgroundColor: '#00A651' }} />
           )}
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={currentTab === 'settings' ? 2.5 : 1.7} strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3" />

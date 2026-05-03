@@ -399,22 +399,54 @@ export default function App() {
             <header
               className="sticky top-0 z-40 flex items-center justify-between px-4 h-14"
               style={{
-                backgroundColor: activeOutage ? 'rgba(192,57,43,0.97)' : 'rgba(10,17,33,0.94)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                borderBottom: `1px solid ${activeOutage ? 'rgba(255,255,255,0.08)' : 'rgba(51,65,85,0.5)'}`,
-                boxShadow: activeOutage ? '0 4px 24px rgba(231,76,60,0.2)' : 'none',
+                backgroundColor: activeOutage ? 'rgba(192,57,43,0.97)' : 'rgba(11,15,26,0.88)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderBottom: `1px solid ${activeOutage ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.07)'}`,
+                boxShadow: activeOutage ? '0 4px 24px rgba(229,57,53,0.2)' : 'none',
                 transition: 'background-color 0.4s ease, box-shadow 0.4s ease',
               }}
             >
               <div className="flex items-center gap-2.5">
-                <span className="text-lg" aria-hidden>⚡</span>
-                <span className="font-black text-base tracking-tight text-textPrimary">
-                  PowerWatch
+                {/* Lightning bolt logo square */}
+                <div
+                  style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    background: 'linear-gradient(135deg, #00A651 0%, #007a3d 100%)',
+                    boxShadow: '0 0 12px rgba(0,166,81,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                    <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" />
+                  </svg>
+                </div>
+                <span
+                  style={{
+                    fontFamily: 'Syne, system-ui, sans-serif',
+                    fontWeight: 800,
+                    fontSize: 17,
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1,
+                  }}
+                >
+                  <span style={{ color: '#F0F4FF' }}>Power</span><span style={{ color: '#00A651' }}>Watch</span>
                 </span>
                 <span
-                  className="text-xs font-semibold px-1.5 py-0.5 rounded-md hidden sm:block"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#94A3B8' }}
+                  className="hidden sm:inline-block"
+                  style={{
+                    background: 'rgba(0,166,81,0.1)',
+                    border: '1px solid rgba(0,166,81,0.2)',
+                    color: '#00A651',
+                    fontSize: 10,
+                    fontFamily: 'Syne, system-ui, sans-serif',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    borderRadius: 100,
+                    padding: '2px 8px',
+                  }}
                 >
                   Nigeria
                 </span>
@@ -422,7 +454,7 @@ export default function App() {
               <button
                 onClick={() => setCurrentTab(currentTab === 'settings' ? 'dashboard' : 'settings')}
                 className="btn-press w-9 h-9 rounded-btn flex items-center justify-center"
-                style={{ color: '#94A3B8', backgroundColor: 'rgba(255,255,255,0.05)' }}
+                style={{ color: '#8B95B0', backgroundColor: 'rgba(255,255,255,0.05)' }}
                 aria-label={currentTab === 'settings' ? 'Back to Home' : 'Settings'}
               >
                 {currentTab === 'settings' ? (
