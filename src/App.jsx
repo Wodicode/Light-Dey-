@@ -133,6 +133,19 @@ export default function App() {
 
   // ── Outage mutations ───────────────────────────────────────────────────────
 
+  // Must be declared before the outage callbacks that reference it in deps.
+  const syncCommunityReport = useCallback(async (date, outageMinutesForDay) => {
+    if (!profile?.community_opt_in || !profile?.lga || !session?.user) return;
+    await supabase.from('community_reports').upsert({
+      user_id:        session.user.id,
+      report_date:    date,
+      lga:            profile.lga,
+      disco:          profile.disco        || null,
+      service_band:   profile.service_band || null,
+      outage_minutes: outageMinutesForDay,
+    }, { onConflict: 'user_id,report_date' });
+  }, [profile, session]);
+
   const startOutage = useCallback(async () => {
     if (!session?.user) return;
     const now = new Date();
@@ -183,20 +196,18 @@ export default function App() {
         .single();
       if (error) throw error;
       setActiveOutage(null);
-      setOutages(prev => {
-        const next = prev.map(o => o.id === data.id ? data : o);
-        // Compute total outage minutes for the day from the updated list
-        const dayTotal = next
-          .filter(o => o.date === data.date && !o.is_active)
-          .reduce((sum, o) => sum + (o.duration_minutes || 0), 0);
-        syncCommunityReport(data.date, dayTotal);
-        return next;
-      });
+      setOutages(prev => prev.map(o => o.id === data.id ? data : o));
+      // Compute day total: outages captured in closure (data.id was still active) + just-ended outage
+      const dayTotal = outages
+        .filter(o => o.date === data.date && !o.is_active && o.id !== data.id)
+        .reduce((sum, o) => sum + (o.duration_minutes || 0), 0)
+        + (data.duration_minutes || 0);
+      syncCommunityReport(data.date, dayTotal);
       showToast('Power restored. Duration logged.');
     } catch (err) {
       showToast('Failed to end outage: ' + err.message, 'error');
     }
-  }, [activeOutage, syncCommunityReport, showToast]);
+  }, [activeOutage, outages, syncCommunityReport, showToast]);
 
   const addManualOutage = useCallback(async (fields) => {
     if (!session?.user) return;
@@ -221,22 +232,24 @@ export default function App() {
           if (b.date !== a.date) return b.date.localeCompare(a.date);
           return b.start_time.localeCompare(a.start_time);
         });
-        if (!data.is_active) {
-          const dayTotal = next
-            .filter(o => o.date === data.date && !o.is_active)
-            .reduce((sum, o) => sum + (o.duration_minutes || 0), 0);
-          syncCommunityReport(data.date, dayTotal);
-        }
         return next;
       });
       if (data.is_active) setActiveOutage(data);
+      if (!data.is_active) {
+        // outages in closure doesn't include the just-inserted one yet
+        const dayTotal = outages
+          .filter(o => o.date === data.date && !o.is_active)
+          .reduce((sum, o) => sum + (o.duration_minutes || 0), 0)
+          + (data.duration_minutes || 0);
+        syncCommunityReport(data.date, dayTotal);
+      }
       showToast('Outage logged successfully.');
       return { success: true };
     } catch (err) {
       showToast('Failed to log outage: ' + err.message, 'error');
       return { success: false, error: err.message };
     }
-  }, [session, syncCommunityReport, showToast]);
+  }, [session, outages, syncCommunityReport, showToast]);
 
   const updateOutage = useCallback(async (id, fields) => {
     try {
@@ -276,21 +289,6 @@ export default function App() {
       showToast('Failed to delete: ' + err.message, 'error');
     }
   }, [activeOutage, showToast]);
-
-  // Silently upsert one anonymised row for the given date into community_reports.
-  // Called after any mutation that completes an outage, if the user has opted in.
-  const syncCommunityReport = useCallback(async (date, outageMinutesForDay) => {
-    if (!profile?.community_opt_in || !profile?.lga || !session?.user) return;
-    await supabase.from('community_reports').upsert({
-      user_id:        session.user.id,
-      report_date:    date,
-      lga:            profile.lga,
-      disco:          profile.disco   || null,
-      service_band:   profile.service_band || null,
-      outage_minutes: outageMinutesForDay,
-    }, { onConflict: 'user_id,report_date' });
-    // failures are intentionally swallowed — sync is best-effort
-  }, [profile, session]);
 
   const saveProfile = useCallback(async (fields) => {
     if (!session?.user) return { success: false };
