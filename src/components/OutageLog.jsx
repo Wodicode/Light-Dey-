@@ -156,13 +156,15 @@ export default function OutageLog() {
             <label className="block text-xs text-textMuted mb-1">Date</label>
             <input className={inputClass} style={inputStyle} type="date" required value={manualForm.date} onChange={setManual('date')} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3">
             <div>
               <label className="block text-xs text-textMuted mb-1">Start Time</label>
               <input className={inputClass} style={inputStyle} type="time" required value={manualForm.start_time} onChange={setManual('start_time')} />
             </div>
             <div>
-              <label className="block text-xs text-textMuted mb-1">Restored At <span className="text-textMuted/50">(blank = active)</span></label>
+              <label className="block text-xs text-textMuted mb-1">
+                Restored At <span className="text-textMuted/50">(leave blank if still active)</span>
+              </label>
               <input className={inputClass} style={inputStyle} type="time" value={manualForm.end_time} onChange={setManual('end_time')} />
             </div>
           </div>
