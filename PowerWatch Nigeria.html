@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PowerWatch Nigeria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0B0F1A;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --green: oklch(58% 0.18 145deg);
+    --green-glow: oklch(58% 0.18 145deg / 0.3);
+    --green-dim: oklch(40% 0.12 145deg);
+    --amber: oklch(72% 0.18 75deg);
+    --amber-glow: oklch(72% 0.18 75deg / 0.3);
+    --red: oklch(55% 0.2 25deg);
+    --red-glow: oklch(55% 0.2 25deg / 0.3);
+    --text: #F0F4FF;
+    --text2: #8B95B0;
+    --text3: #4A5470;
+    --card: rgba(255,255,255,0.04);
+    --card-hover: rgba(255,255,255,0.07);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); overflow-x: hidden; }
+  #root { min-height: 100%; }
+
+  /* Grid texture background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  @keyframes waveform {
+    0% { d: path("M0,12 Q10,6 20,12 Q30,18 40,12 Q50,6 60,12 Q70,18 80,12"); }
+    50% { d: path("M0,12 Q10,18 20,12 Q30,6 40,12 Q50,18 60,12 Q70,6 80,12"); }
+    100% { d: path("M0,12 Q10,6 20,12 Q30,18 40,12 Q50,6 60,12 Q70,18 80,12"); }
+  }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+  @keyframes mapPing {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "dark",
+  "accentColor": "green",
+  "homepageVariant": "A",
+  "showAnimations": true,
+  "fontScale": 1
+}/*EDITMODE-END*/;
+
+// ─── DESIGN TOKENS ───────────────────────────────────────────────
+const ACCENT_MAP = {
+  green: { main: 'oklch(58% 0.18 145deg)', glow: 'oklch(58% 0.18 145deg / 0.25)', dim: 'oklch(40% 0.12 145deg)', css: '#00A651' },
+  blue:  { main: 'oklch(60% 0.2 230deg)',  glow: 'oklch(60% 0.2 230deg / 0.25)',  dim: 'oklch(40% 0.14 230deg)', css: '#0066FF' },
+  amber: { main: 'oklch(72% 0.18 75deg)',  glow: 'oklch(72% 0.18 75deg / 0.25)',  dim: 'oklch(50% 0.12 75deg)',  css: '#F5A623' },
+};
+
+// ─── MOCK DATA ────────────────────────────────────────────────────
+const MOCK_STATES = [
+  { name: 'Lagos',       status: 'partial', uptime: 62, reports: 134, band: 'A/B' },
+  { name: 'Abuja',       status: 'on',      uptime: 88, reports: 12,  band: 'A' },
+  { name: 'Kano',        status: 'off',     uptime: 21, reports: 218, band: 'D' },
+  { name: 'Ibadan',      status: 'partial', uptime: 45, reports: 97,  band: 'B/C' },
+  { name: 'Port Harcourt',status:'on',      uptime: 74, reports: 31,  band: 'A/B' },
+  { name: 'Enugu',       status: 'off',     uptime: 18, reports: 167, band: 'E' },
+  { name: 'Kaduna',      status: 'partial', uptime: 39, reports: 88,  band: 'C/D' },
+  { name: 'Jos',         status: 'off',     uptime: 14, reports: 201, band: 'E' },
+  { name: 'Benin',       status: 'partial', uptime: 53, reports: 62,  band: 'B/C' },
+  { name: 'Warri',       status: 'on',      uptime: 71, reports: 24,  band: 'A/B' },
+];
+
+const RECENT_REPORTS = [
+  { area: 'Surulere, Lagos',     type: 'outage',   time: '3 min ago',  disco: 'IKEDC' },
+  { area: 'Wuse II, Abuja',      type: 'restored', time: '11 min ago', disco: 'AEDC'  },
+  { area: 'Tudun Wada, Kano',    type: 'outage',   time: '18 min ago', disco: 'KEDCO' },
+  { area: 'Bodija, Ibadan',      type: 'low_volt', time: '24 min ago', disco: 'IBEDC' },
+  { area: 'GRA, Port Harcourt',  type: 'restored', time: '31 min ago', disco: 'PHEDC' },
+  { area: 'Independence Layout', type: 'outage',   time: '45 min ago', disco: 'EEDC'  },
+];
+
+const STATUS_COLOR = { on: '#00A651', partial: '#F5A623', off: '#E53935' };
+const STATUS_LABEL = { on: 'Power On', partial: 'Partial', off: 'No Power' };
+
+// ─── SHARED COMPONENTS ────────────────────────────────────────────
+
+function NavBar({ page, setPage, accent }) {
+  const [open, setOpen] = useState(false);
+  const accentColor = accent.css;
+  return (
+    <nav style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+      background: 'rgba(11,15,26,0.85)',
+      backdropFilter: 'blur(20px)',
+      borderBottom: '1px solid rgba(255,255,255,0.07)',
+      padding: '0 20px',
+      height: 60,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    }}>
+      {/* Logo */}
+      <button onClick={() => setPage('home')} style={{
+        background: 'none', border: 'none', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: 8,
+          background: `linear-gradient(135deg, ${accentColor}, ${accent.main})`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 0 16px ${accent.glow}`,
+        }}>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M10 2L4 10h5l-1 6 6-8h-5l1-6z" fill="white" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+          Power<span style={{ color: accentColor }}>Watch</span>
+        </span>
+      </button>
+
+      {/* Desktop nav */}
+      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        {[['home','Home'],['dashboard','Map & Stats'],['report','Report']].map(([id, label]) => (
+          <button key={id} onClick={() => setPage(id)} style={{
+            background: page === id ? `${accentColor}18` : 'none',
+            border: page === id ? `1px solid ${accentColor}40` : '1px solid transparent',
+            borderRadius: 8, padding: '6px 14px',
+            color: page === id ? accentColor : 'var(--text2)',
+            fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500,
+            cursor: 'pointer', transition: 'all 0.2s',
+          }}>{label}</button>
+        ))}
+        <button onClick={() => setPage('report')} style={{
+          background: accentColor, border: 'none', borderRadius: 8,
+          padding: '7px 16px', color: '#fff', fontFamily: 'var(--font-body)',
+          fontSize: 14, fontWeight: 600, cursor: 'pointer', marginLeft: 8,
+          boxShadow: `0 0 20px ${accent.glow}`,
+          transition: 'all 0.2s',
+        }}>Report Outage</button>
+      </div>
+    </nav>
+  );
+}
+
+function StatusBadge({ status, size = 'sm' }) {
+  const color = STATUS_COLOR[status];
+  const label = STATUS_LABEL[status];
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: `${color}18`, border: `1px solid ${color}40`,
+      borderRadius: 100, padding: size === 'lg' ? '5px 12px' : '3px 9px',
+      fontSize: size === 'lg' ? 13 : 11, fontWeight: 600,
+      color: color, fontFamily: 'var(--font-body)', whiteSpace: 'nowrap',
+    }}>
+      <span style={{
+        width: 6, height: 6, borderRadius: '50%', background: color,
+        animation: status !== 'off' ? 'pulse 2s infinite' : 'none',
+        flexShrink: 0,
+      }}></span>
+      {label}
+    </span>
+  );
+}
+
+function WaveformSVG({ color = '#00A651', height = 24 }) {
+  return (
+    <svg width="80" height={height} viewBox={`0 0 80 ${height}`} fill="none">
+      <path
+        d={`M0,${height/2} Q10,${height/2-6} 20,${height/2} Q30,${height/2+6} 40,${height/2} Q50,${height/2-6} 60,${height/2} Q70,${height/2+6} 80,${height/2}`}
+        stroke={color} strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6"
+      />
+      <path
+        d={`M0,${height/2} Q10,${height/2+4} 20,${height/2} Q30,${height/2-4} 40,${height/2} Q50,${height/2+4} 60,${height/2} Q70,${height/2-4} 80,${height/2}`}
+        stroke={color} strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.3"
+      />
+    </svg>
+  );
+}
+
+// ─── PAGE: HOME ────────────────────────────────────────────────────
+function HomePage({ setPage, accent, variant, animated }) {
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { setTimeout(() => setLoaded(true), 100); }, []);
+
+  const anim = (delay = 0) => animated ? {
+    opacity: loaded ? 1 : 0,
+    transform: loaded ? 'translateY(0)' : 'translateY(24px)',
+    transition: `all 0.6s ease ${delay}ms`,
+  } : {};
+
+  // Stats ticker data
+  const stats = [
+    { label: 'Active Reports', value: '1,247', icon: '⚡' },
+    { label: 'Areas Monitored', value: '3,891', icon: '📍' },
+    { label: 'Avg Uptime Today', value: '43%', icon: '📊' },
+    { label: 'States Covered', value: '36', icon: '🗺️' },
+  ];
+
+  if (variant === 'A') return <HomeVariantA setPage={setPage} accent={accent} anim={anim} stats={stats} />;
+  if (variant === 'B') return <HomeVariantB setPage={setPage} accent={accent} anim={anim} stats={stats} />;
+  return <HomeVariantC setPage={setPage} accent={accent} anim={anim} stats={stats} />;
+}
+
+function HomeVariantA({ setPage, accent, anim, stats }) {
+  // Bold full-bleed hero with animated grid
+  return (
+    <div style={{ paddingTop: 60, minHeight: '100vh' }}>
+      {/* Hero */}
+      <section style={{
+        minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', padding: '60px 20px 80px',
+        position: 'relative', overflow: 'hidden', textAlign: 'center',
+      }}>
+        {/* Glow orb */}
+        <div style={{
+          position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)',
+          width: 600, height: 600, borderRadius: '50%',
+          background: `radial-gradient(circle, ${accent.glow} 0%, transparent 70%)`,
+          pointerEvents: 'none',
+        }}/>
+        {/* Concentric rings */}
+        {[200, 340, 480].map((size, i) => (
+          <div key={i} style={{
+            position: 'absolute', top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: size, height: size, borderRadius: '50%',
+            border: `1px solid ${accent.main}`,
+            opacity: 0.06 + i * 0.03,
+            pointerEvents: 'none',
+          }}/>
+        ))}
+
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 720 }}>
+          {/* Eyebrow */}
+          <div style={{ ...anim(0), display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: `${accent.css}18`, border: `1px solid ${accent.css}40`,
+              borderRadius: 100, padding: '6px 16px',
+              fontSize: 12, fontWeight: 600, color: accent.css,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: accent.css, animation: 'pulse 2s infinite' }}></span>
+              Live Nationwide Monitoring
+            </span>
+          </div>
+
+          <h1 style={{
+            ...anim(100),
+            fontFamily: 'var(--font-display)', fontWeight: 800,
+            fontSize: 'clamp(40px, 10vw, 88px)', lineHeight: 1.0,
+            letterSpacing: '-0.04em', marginBottom: 24,
+            color: 'var(--text)',
+          }}>
+            Know Your<br/>
+            <span style={{
+              background: `linear-gradient(135deg, ${accent.css}, oklch(72% 0.18 75deg))`,
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>Power Status</span>
+          </h1>
+
+          <p style={{
+            ...anim(200),
+            fontSize: 'clamp(16px, 3vw, 20px)', color: 'var(--text2)',
+            lineHeight: 1.6, marginBottom: 40, maxWidth: 520, margin: '0 auto 40px',
+            fontWeight: 300,
+          }}>
+            Track outages, report power cuts, and see real-time electricity availability across every neighbourhood in Nigeria.
+          </p>
+
+          <div style={{ ...anim(300), display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 60 }}>
+            <button onClick={() => setPage('dashboard')} style={{
+              background: accent.css, border: 'none', borderRadius: 12,
+              padding: '14px 28px', color: '#fff', fontSize: 16, fontWeight: 600,
+              cursor: 'pointer', boxShadow: `0 0 32px ${accent.glow}`,
+              fontFamily: 'var(--font-body)', transition: 'transform 0.2s',
+            }}>View Live Map →</button>
+            <button onClick={() => setPage('report')} style={{
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 12, padding: '14px 28px', color: 'var(--text)',
+              fontSize: 16, fontWeight: 500, cursor: 'pointer',
+              fontFamily: 'var(--font-body)', transition: 'background 0.2s',
+            }}>Report Outage</button>
+          </div>
+
+          {/* Stats row */}
+          <div style={{ ...anim(400), display: 'flex', gap: 0, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {stats.map((s, i) => (
+              <div key={i} style={{
+                padding: '16px 28px', textAlign: 'center',
+                borderRight: i < stats.length-1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+              }}>
+                <div style={{ fontSize: 24, fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--text)' }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Status ticker */}
+      <StatusTickerSection accent={accent} />
+
+      {/* Features grid */}
+      <FeaturesSection setPage={setPage} accent={accent} anim={anim} />
+
+      {/* Recent reports */}
+      <RecentReportsSection accent={accent} />
+    </div>
+  );
+}
+
+function HomeVariantB({ setPage, accent, anim, stats }) {
+  // Split layout: left text, right live map preview
+  return (
+    <div style={{ paddingTop: 60, minHeight: '100vh' }}>
+      <section style={{
+        minHeight: 'calc(100vh - 60px)',
+        display: 'grid', gridTemplateColumns: '1fr 1fr',
+        gap: 0, alignItems: 'stretch',
+      }}>
+        {/* Left: Text */}
+        <div style={{
+          padding: 'clamp(40px,6vw,80px)',
+          display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+          position: 'relative',
+        }}>
+          <div style={{ ...anim(0), marginBottom: 20 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: `${accent.css}15`, borderRadius: 100,
+              padding: '5px 12px', fontSize: 11, fontWeight: 700,
+              color: accent.css, letterSpacing: '0.1em', textTransform: 'uppercase',
+              border: `1px solid ${accent.css}30`,
+            }}>⚡ Real-time Tracking</span>
+          </div>
+          <h1 style={{
+            ...anim(80),
+            fontFamily: 'var(--font-display)', fontWeight: 800,
+            fontSize: 'clamp(36px, 5vw, 72px)', lineHeight: 1.05,
+            letterSpacing: '-0.03em', marginBottom: 20,
+          }}>
+            Nigeria's Power<br/>
+            <span style={{ color: accent.css }}>Grid, Exposed.</span>
+          </h1>
+          <p style={{ ...anim(160), fontSize: 17, color: 'var(--text2)', lineHeight: 1.7, marginBottom: 36, maxWidth: 440, fontWeight: 300 }}>
+            Community-powered outage tracking. Know before you pack up, before you rush home — see the power status of any area in Nigeria, right now.
+          </p>
+          <div style={{ ...anim(240), display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 40, maxWidth: 400 }}>
+            <SearchBar accent={accent} setPage={setPage} />
+          </div>
+          <div style={{ ...anim(320), display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, maxWidth: 400 }}>
+            {stats.slice(0,4).map((s,i) => (
+              <div key={i} style={{
+                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 12, padding: '14px 16px',
+              }}>
+                <div style={{ fontSize: 22, fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--text)' }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Mini map mockup */}
+        <div style={{
+          background: 'var(--bg2)', position: 'relative', overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: 500,
+        }}>
+          <MiniMapMockup accent={accent} setPage={setPage} />
+        </div>
+      </section>
+      <StatusTickerSection accent={accent} />
+      <FeaturesSection setPage={setPage} accent={accent} anim={anim} />
+      <RecentReportsSection accent={accent} />
+    </div>
+  );
+}
+
+function HomeVariantC({ setPage, accent, anim, stats }) {
+  // Editorial / magazine style with large type and asymmetric grid
+  return (
+    <div style={{ paddingTop: 60 }}>
+      {/* Full-bleed header band */}
+      <div style={{
+        background: accent.css,
+        padding: '10px 20px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
+        overflow: 'hidden',
+      }}>
+        {['Lagos: Partial', 'Abuja: On', 'Kano: Off', 'Ibadan: Partial', 'PHC: On', 'Enugu: Off'].map((t,i) => (
+          <span key={i} style={{ fontSize: 11, fontWeight: 700, color: 'rgba(0,0,0,0.8)', whiteSpace: 'nowrap', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            {t} {i < 5 ? '·' : ''}
+          </span>
+        ))}
+      </div>
+
+      {/* Hero */}
+      <section style={{ padding: '80px 24px 60px', maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ ...anim(0), display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 16 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Vol. 1 — May 2026</span>
+          <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }}></span>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: accent.css, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Live</span>
+        </div>
+        <h1 style={{
+          ...anim(80),
+          fontFamily: 'var(--font-display)', fontWeight: 800,
+          fontSize: 'clamp(52px, 12vw, 120px)', lineHeight: 0.92,
+          letterSpacing: '-0.05em', marginBottom: 32,
+          textTransform: 'uppercase',
+        }}>
+          POWER<br/>
+          <span style={{
+            WebkitTextStroke: `2px ${accent.css}`,
+            WebkitTextFillColor: 'transparent',
+          }}>WATCH</span><br/>
+          NIGERIA
+        </h1>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 40, alignItems: 'end' }}>
+          <p style={{ ...anim(160), fontSize: 18, color: 'var(--text2)', lineHeight: 1.6, maxWidth: 480, fontWeight: 300 }}>
+            Nigeria's first community-driven electricity grid monitor. Track power outages, report your situation, and hold distributors accountable.
+          </p>
+          <div style={{ ...anim(240), display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button onClick={() => setPage('dashboard')} style={{
+              background: accent.css, border: 'none', borderRadius: 10,
+              padding: '13px 24px', color: '#fff', fontSize: 15, fontWeight: 700,
+              cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-body)',
+            }}>View Map →</button>
+            <button onClick={() => setPage('report')} style={{
+              background: 'none', border: `1px solid rgba(255,255,255,0.15)`,
+              borderRadius: 10, padding: '12px 24px', color: 'var(--text)',
+              fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)',
+            }}>Report Outage</button>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats band */}
+      <div style={{
+        borderTop: '1px solid rgba(255,255,255,0.07)',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        display: 'flex', justifyContent: 'space-around', padding: '28px 24px',
+        background: 'rgba(255,255,255,0.02)',
+      }}>
+        {stats.map((s,i) => (
+          <div key={i} style={{ textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: accent.css }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <FeaturesSection setPage={setPage} accent={accent} anim={anim} />
+      <RecentReportsSection accent={accent} />
+    </div>
+  );
+}
+
+// ─── SHARED HOME SECTIONS ─────────────────────────────────────────
+
+function SearchBar({ accent, setPage }) {
+  const [val, setVal] = useState('');
+  return (
+    <div style={{ position: 'relative', display: 'flex', gap: 8 }}>
+      <input
+        value={val} onChange={e => setVal(e.target.value)}
+        placeholder="Search your area (e.g. Surulere, Lagos)"
+        style={{
+          flex: 1, background: 'rgba(255,255,255,0.05)',
+          border: `1px solid rgba(255,255,255,0.1)`,
+          borderRadius: 10, padding: '12px 16px',
+          color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font-body)',
+          outline: 'none',
+        }}
+      />
+      <button onClick={() => setPage('dashboard')} style={{
+        background: accent.css, border: 'none', borderRadius: 10,
+        padding: '12px 18px', color: '#fff', fontSize: 14,
+        fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)',
+        whiteSpace: 'nowrap',
+      }}>Check →</button>
+    </div>
+  );
+}
+
+function StatusTickerSection({ accent }) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.02)',
+      borderTop: '1px solid var(--border)',
+      borderBottom: '1px solid var(--border)',
+      padding: '14px 0', overflow: 'hidden',
+    }}>
+      <div style={{
+        display: 'flex', gap: 32, animation: 'none', whiteSpace: 'nowrap',
+        overflowX: 'auto', padding: '0 24px',
+        scrollbarWidth: 'none',
+      }}>
+        {MOCK_STATES.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: STATUS_COLOR[s.status],
+              animation: s.status !== 'off' ? 'pulse 2s infinite' : 'none',
+              flexShrink: 0,
+            }}></span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, color: 'var(--text2)', letterSpacing: '0.04em' }}>
+              {s.name}
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: STATUS_COLOR[s.status] }}>{s.uptime}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FeaturesSection({ setPage, accent, anim }) {
+  const features = [
+    { icon: '🗺️', title: 'Live Map', desc: 'See outages across Nigeria in real-time. Drill down to street level.', page: 'dashboard' },
+    { icon: '⚡', title: 'Instant Reports', desc: 'Report your outage in seconds. Your community sees it immediately.', page: 'report' },
+    { icon: '📊', title: 'Uptime Stats', desc: 'Historical data, disco comparisons, tariff band info.', page: 'dashboard' },
+    { icon: '🔔', title: 'Alerts', desc: 'Get notified when power is restored in your area.', page: 'report' },
+  ];
+  return (
+    <section style={{ padding: '80px 24px', maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ marginBottom: 40 }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>What We Do</span>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(28px, 5vw, 48px)', letterSpacing: '-0.03em', marginTop: 8 }}>Built for Nigerians</h2>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+        {features.map((f, i) => (
+          <button key={i} onClick={() => setPage(f.page)} style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 16, padding: '28px 24px', textAlign: 'left',
+            cursor: 'pointer', transition: 'all 0.2s',
+            fontFamily: 'var(--font-body)',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = accent.css + '40'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; }}>
+            <div style={{ fontSize: 28, marginBottom: 14 }}>{f.icon}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--text)', marginBottom: 8 }}>{f.title}</div>
+            <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6 }}>{f.desc}</div>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RecentReportsSection({ accent }) {
+  const typeInfo = {
+    outage:   { label: 'Outage',    color: '#E53935' },
+    restored: { label: 'Restored',  color: '#00A651' },
+    low_volt: { label: 'Low Voltage', color: '#F5A623' },
+  };
+  return (
+    <section style={{
+      padding: '0 24px 80px', maxWidth: 900, margin: '0 auto',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Community</span>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(24px,4vw,36px)', letterSpacing: '-0.02em', marginTop: 4 }}>Live Reports</h2>
+        </div>
+        <span style={{ fontSize: 12, color: accent.css, fontWeight: 600, cursor: 'pointer' }}>View all →</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {RECENT_REPORTS.map((r, i) => {
+          const t = typeInfo[r.type];
+          return (
+            <div key={i} style={{
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 12, padding: '14px 18px',
+              display: 'flex', alignItems: 'center', gap: 14,
+            }}>
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%', background: t.color, flexShrink: 0,
+                animation: r.type !== 'off' ? 'pulse 2s infinite' : 'none',
+              }}></span>
+              <span style={{ flex: 1, fontWeight: 500, fontSize: 14, color: 'var(--text)' }}>{r.area}</span>
+              <span style={{
+                background: `${t.color}18`, color: t.color, border: `1px solid ${t.color}30`,
+                borderRadius: 100, padding: '2px 9px', fontSize: 11, fontWeight: 700,
+              }}>{t.label}</span>
+              <span style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }}>{r.disco}</span>
+              <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>{r.time}</span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ─── MINI MAP MOCKUP ──────────────────────────────────────────────
+function MiniMapMockup({ accent, setPage }) {
+  const dots = [
+    { x: 22, y: 72, status: 'on',      label: 'Lagos' },
+    { x: 52, y: 38, status: 'on',      label: 'Abuja' },
+    { x: 65, y: 22, status: 'off',     label: 'Kano' },
+    { x: 20, y: 60, status: 'partial', label: 'Ibadan' },
+    { x: 30, y: 76, status: 'on',      label: 'PHC' },
+    { x: 40, y: 65, status: 'off',     label: 'Enugu' },
+    { x: 55, y: 28, status: 'partial', label: 'Kaduna' },
+  ];
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative', minHeight: 500 }}
+      onClick={() => setPage('dashboard')}>
+      {/* Map grid bg */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: `
+          radial-gradient(ellipse at 60% 40%, ${accent.glow} 0%, transparent 60%),
+          linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)
+        `,
+        backgroundSize: 'auto, 30px 30px, 30px 30px',
+      }}/>
+      {/* Dots */}
+      {dots.map((d, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: `${d.x}%`, top: `${d.y}%`,
+          transform: 'translate(-50%,-50%)',
+        }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            width: 24, height: 24, borderRadius: '50%',
+            background: STATUS_COLOR[d.status],
+            opacity: 0.25,
+            animation: 'mapPing 2s infinite',
+            animationDelay: `${i * 0.3}s`,
+          }}/>
+          <div style={{
+            width: 12, height: 12, borderRadius: '50%',
+            background: STATUS_COLOR[d.status],
+            border: '2px solid var(--bg2)',
+            position: 'relative', zIndex: 1,
+            boxShadow: `0 0 10px ${STATUS_COLOR[d.status]}80`,
+          }}/>
+          <div style={{
+            position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)',
+            fontSize: 9, fontWeight: 700, color: 'var(--text2)', whiteSpace: 'nowrap',
+            letterSpacing: '0.04em',
+          }}>{d.label}</div>
+        </div>
+      ))}
+      {/* CTA overlay */}
+      <div style={{
+        position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+        background: 'rgba(11,15,26,0.85)', backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: 12, padding: '12px 20px', whiteSpace: 'nowrap',
+        fontSize: 13, fontWeight: 600, color: accent.css, cursor: 'pointer',
+      }}>Open Live Map →</div>
+    </div>
+  );
+}
+
+// ─── PAGE: DASHBOARD ──────────────────────────────────────────────
+function DashboardPage({ accent }) {
+  const [selectedState, setSelectedState] = useState(null);
+  const [activeTab, setActiveTab] = useState('map');
+
+  return (
+    <div style={{ paddingTop: 60, minHeight: '100vh' }}>
+      {/* Page Header */}
+      <div style={{
+        padding: '32px 24px 24px',
+        borderBottom: '1px solid var(--border)',
+        background: 'linear-gradient(to bottom, rgba(255,255,255,0.02), transparent)',
+      }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Live Dashboard</span>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(24px,4vw,40px)', letterSpacing: '-0.03em', marginTop: 4 }}>Nigeria Power Map</h1>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: accent.css, animation: 'pulse 2s infinite', display: 'inline-block' }}></span>
+            <span style={{ fontSize: 13, color: 'var(--text2)', fontWeight: 500 }}>Updated just now</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div style={{ padding: '24px', maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 28 }}>
+          {[
+            { label: 'Avg Uptime', value: '43%', sub: 'Nationwide today', color: '#F5A623' },
+            { label: 'Active Outages', value: '831', sub: 'Reported areas', color: '#E53935' },
+            { label: 'Restored Today', value: '214', sub: 'In last 24hrs', color: '#00A651' },
+            { label: 'Community Reports', value: '1,247', sub: 'Last 7 days', color: accent.css },
+          ].map((c, i) => (
+            <div key={i} style={{
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 14, padding: '18px 20px',
+              borderTop: `3px solid ${c.color}`,
+            }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{c.label}</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: c.color, lineHeight: 1 }}>{c.value}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>{c.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
+          {[['map','🗺️ Map View'],['list','📋 State List'],['reports','⚡ Live Reports']].map(([tab, label]) => (
+            <button key={tab} onClick={() => setActiveTab(tab)} style={{
+              background: 'none', border: 'none', borderBottom: activeTab === tab ? `2px solid ${accent.css}` : '2px solid transparent',
+              padding: '8px 16px 12px', color: activeTab === tab ? accent.css : 'var(--text2)',
+              fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)',
+              transition: 'all 0.2s', marginBottom: -1,
+            }}>{label}</button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        {activeTab === 'map' && <MapTabContent accent={accent} onSelectState={setSelectedState} selectedState={selectedState} />}
+        {activeTab === 'list' && <ListTabContent accent={accent} onSelectState={setSelectedState} selectedState={selectedState} />}
+        {activeTab === 'reports' && <ReportsTabContent accent={accent} />}
+      </div>
+    </div>
+  );
+}
+
+function MapTabContent({ accent, onSelectState, selectedState }) {
+  const dots = [
+    { x: 18, y: 72, ...MOCK_STATES[0] },
+    { x: 50, y: 40, ...MOCK_STATES[1] },
+    { x: 62, y: 18, ...MOCK_STATES[2] },
+    { x: 16, y: 60, ...MOCK_STATES[3] },
+    { x: 28, y: 78, ...MOCK_STATES[4] },
+    { x: 38, y: 65, ...MOCK_STATES[5] },
+    { x: 52, y: 28, ...MOCK_STATES[6] },
+    { x: 45, y: 55, ...MOCK_STATES[7] },
+    { x: 25, y: 68, ...MOCK_STATES[8] },
+    { x: 22, y: 75, ...MOCK_STATES[9] },
+  ];
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'start' }}>
+      {/* Map */}
+      <div style={{
+        background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
+        borderRadius: 16, height: 440, position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: `
+            radial-gradient(ellipse at 40% 50%, ${accent.glow} 0%, transparent 60%),
+            linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px)
+          `,
+          backgroundSize: 'auto, 25px 25px, 25px 25px',
+        }}/>
+        {/* Nigeria outline placeholder */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+          width: '70%', height: '70%',
+          border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '40% 50% 45% 55%',
+          opacity: 0.5,
+        }}/>
+        <div style={{
+          position: 'absolute', top: 16, left: 16,
+          fontSize: 10, color: 'var(--text3)', fontWeight: 700,
+          letterSpacing: '0.1em', textTransform: 'uppercase',
+        }}>NIGERIA</div>
+
+        {dots.map((d, i) => (
+          <div key={i} style={{
+            position: 'absolute', left: `${d.x}%`, top: `${d.y}%`,
+            transform: 'translate(-50%,-50%)', cursor: 'pointer',
+            zIndex: selectedState?.name === d.name ? 10 : 1,
+          }} onClick={() => onSelectState(d)}>
+            {/* Ping ring */}
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%,-50%)',
+              width: 28, height: 28, borderRadius: '50%',
+              background: STATUS_COLOR[d.status],
+              opacity: 0.2, animation: 'mapPing 2.5s infinite',
+              animationDelay: `${i * 0.25}s`,
+            }}/>
+            {/* Dot */}
+            <div style={{
+              width: selectedState?.name === d.name ? 16 : 12,
+              height: selectedState?.name === d.name ? 16 : 12,
+              borderRadius: '50%',
+              background: STATUS_COLOR[d.status],
+              border: selectedState?.name === d.name ? `2px solid white` : '2px solid var(--bg)',
+              position: 'relative', zIndex: 1,
+              boxShadow: `0 0 12px ${STATUS_COLOR[d.status]}80`,
+              transition: 'all 0.2s',
+            }}/>
+            {/* Label on selected */}
+            {selectedState?.name === d.name && (
+              <div style={{
+                position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)',
+                background: 'var(--bg)', border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 8, padding: '4px 10px',
+                fontSize: 11, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap',
+                zIndex: 2,
+              }}>{d.name}</div>
+            )}
+          </div>
+        ))}
+
+        {/* Legend */}
+        <div style={{
+          position: 'absolute', bottom: 16, right: 16,
+          background: 'rgba(11,15,26,0.85)', backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 10, padding: '10px 14px',
+          display: 'flex', flexDirection: 'column', gap: 6,
+        }}>
+          {Object.entries(STATUS_COLOR).map(([key, color]) => (
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }}></span>
+              <span style={{ fontSize: 11, color: 'var(--text2)', fontWeight: 500 }}>{STATUS_LABEL[key]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* State detail panel */}
+      {selectedState ? (
+        <div style={{
+          width: 240, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: 20, animation: 'slideIn 0.25s ease',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18 }}>{selectedState.name}</span>
+            <StatusBadge status={selectedState.status} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              ['Uptime Today', `${selectedState.uptime}%`],
+              ['Reports', selectedState.reports.toLocaleString()],
+              ['Tariff Band', selectedState.band],
+            ].map(([label, value]) => (
+              <div key={label} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 12 }}>
+                <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 20, fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--text)' }}>{value}</div>
+              </div>
+            ))}
+          </div>
+          {/* Uptime bar */}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Uptime Bar</div>
+            <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 100, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: 100,
+                width: `${selectedState.uptime}%`,
+                background: STATUS_COLOR[selectedState.status],
+                boxShadow: `0 0 8px ${STATUS_COLOR[selectedState.status]}`,
+              }}/>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          width: 240, background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.07)',
+          borderRadius: 16, padding: 20,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200,
+        }}>
+          <span style={{ fontSize: 13, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.6 }}>Click a dot on the map to see state details</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ListTabContent({ accent, onSelectState, selectedState }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {MOCK_STATES.map((s, i) => (
+        <div key={i} onClick={() => onSelectState(s)} style={{
+          background: selectedState?.name === s.name ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+          border: selectedState?.name === s.name ? `1px solid ${accent.css}40` : '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 12, padding: '16px 20px',
+          display: 'grid', gridTemplateColumns: '1fr auto auto auto auto',
+          alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'all 0.15s',
+        }}>
+          <span style={{ fontWeight: 600, fontSize: 15 }}>{s.name}</span>
+          <StatusBadge status={s.status} />
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: STATUS_COLOR[s.status] }}>{s.uptime}%</div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase' }}>Uptime</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18 }}>{s.reports}</div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase' }}>Reports</div>
+          </div>
+          <div style={{
+            background: 'rgba(255,255,255,0.05)', borderRadius: 8,
+            padding: '4px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text2)',
+          }}>Band {s.band}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ReportsTabContent({ accent }) {
+  const typeInfo = {
+    outage:   { label: 'Outage',      color: '#E53935', icon: '🔴' },
+    restored: { label: 'Restored',    color: '#00A651', icon: '🟢' },
+    low_volt: { label: 'Low Voltage', color: '#F5A623', icon: '🟡' },
+  };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {RECENT_REPORTS.concat(RECENT_REPORTS).map((r, i) => {
+        const t = typeInfo[r.type];
+        return (
+          <div key={i} style={{
+            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 12, padding: '14px 18px',
+            display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: '50%', background: t.color, flexShrink: 0,
+            }}></span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 500, fontSize: 14, color: 'var(--text)' }}>{r.area}</div>
+              <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{r.disco}</div>
+            </div>
+            <span style={{
+              background: `${t.color}18`, color: t.color, border: `1px solid ${t.color}30`,
+              borderRadius: 100, padding: '3px 10px', fontSize: 11, fontWeight: 700,
+            }}>{t.label}</span>
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>{r.time}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── PAGE: REPORT ──────────────────────────────────────────────────
+function ReportPage({ accent }) {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({ type: '', area: '', disco: '', desc: '', phone: '' });
+  const [submitted, setSubmitted] = useState(false);
+
+  const TOTAL_STEPS = 3;
+
+  const handleSubmit = () => {
+    setSubmitted(true);
+  };
+
+  if (submitted) return <ReportSuccess accent={accent} onReset={() => { setSubmitted(false); setStep(1); setFormData({ type:'',area:'',disco:'',desc:'',phone:'' }); }} />;
+
+  return (
+    <div style={{ paddingTop: 60, minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '100px 24px 60px' }}>
+      <div style={{ width: '100%', maxWidth: 560 }}>
+        {/* Header */}
+        <div style={{ marginBottom: 40, textAlign: 'center' }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16, margin: '0 auto 16px',
+            background: `linear-gradient(135deg, ${accent.css}30, ${accent.css}10)`,
+            border: `1px solid ${accent.css}30`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+          }}>⚡</div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(28px,5vw,40px)', letterSpacing: '-0.03em', marginBottom: 8 }}>Report a Power Issue</h1>
+          <p style={{ color: 'var(--text2)', fontSize: 15, lineHeight: 1.6 }}>Help your community stay informed. Takes under 30 seconds.</p>
+        </div>
+
+        {/* Progress */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 36 }}>
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <div key={i} style={{
+              flex: 1, height: 4, borderRadius: 100,
+              background: i < step ? accent.css : 'rgba(255,255,255,0.08)',
+              transition: 'background 0.3s',
+            }}/>
+          ))}
+        </div>
+
+        {/* Form steps */}
+        <div style={{
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 20, padding: '32px 28px',
+        }}>
+          {step === 1 && (
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>What's the issue?</h2>
+              <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 24 }}>Step 1 of {TOTAL_STEPS}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { value: 'outage',   label: 'Complete Outage',    sub: 'No power at all',       icon: '🔴' },
+                  { value: 'low_volt', label: 'Low Voltage',        sub: 'Unstable or weak power', icon: '🟡' },
+                  { value: 'restored', label: 'Power Restored',     sub: 'Reporting it came back', icon: '🟢' },
+                  { value: 'flicker',  label: 'Frequent Flickers',  sub: 'On/off irregularly',    icon: '⚡' },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => setFormData(p => ({ ...p, type: opt.value }))} style={{
+                    background: formData.type === opt.value ? `${accent.css}18` : 'rgba(255,255,255,0.03)',
+                    border: formData.type === opt.value ? `1px solid ${accent.css}60` : '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: 12, padding: '14px 16px',
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left',
+                  }}>
+                    <span style={{ fontSize: 20 }}>{opt.icon}</span>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)', fontFamily: 'var(--font-body)' }}>{opt.label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>{opt.sub}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Where are you?</h2>
+              <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 24 }}>Step 2 of {TOTAL_STEPS}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {[
+                  { key: 'area', label: 'Your Area / Neighbourhood', placeholder: 'e.g. Surulere, Lagos' },
+                  { key: 'disco', label: 'Distribution Company (DISCO)', placeholder: 'e.g. IKEDC, AEDC, KEDCO…' },
+                  { key: 'desc', label: 'Additional Details (optional)', placeholder: 'How long? Any other info?', multi: true },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{f.label}</label>
+                    {f.multi ? (
+                      <textarea value={formData[f.key]} onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}
+                        placeholder={f.placeholder} rows={3}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '12px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none', resize: 'vertical' }}
+                      />
+                    ) : (
+                      <input value={formData[f.key]} onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}
+                        placeholder={f.placeholder}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '12px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none' }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, marginBottom: 8 }}>Confirm & Submit</h2>
+              <p style={{ color: 'var(--text2)', fontSize: 14, marginBottom: 24 }}>Step 3 of {TOTAL_STEPS} — Review your report</p>
+              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 20, marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[
+                  ['Issue Type', formData.type ? formData.type.replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase()) : '—'],
+                  ['Location', formData.area || '—'],
+                  ['DISCO', formData.disco || '—'],
+                  ['Details', formData.desc || 'None provided'],
+                ].map(([k,v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+                    <span style={{ color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', fontSize: 11, letterSpacing: '0.06em' }}>{k}</span>
+                    <span style={{ color: 'var(--text)', fontWeight: 500, textAlign: 'right', maxWidth: '60%' }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text2)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Phone (optional, for follow-up)</label>
+                <input value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                  placeholder="+234 800 000 0000"
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '12px 14px', color: 'var(--text)', fontSize: 14, fontFamily: 'var(--font-body)', outline: 'none' }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Nav buttons */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
+            {step > 1 && (
+              <button onClick={() => setStep(s => s - 1)} style={{
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 10, padding: '12px 20px', color: 'var(--text)',
+                fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)',
+              }}>← Back</button>
+            )}
+            {step < TOTAL_STEPS ? (
+              <button
+                onClick={() => step === 1 && !formData.type ? null : setStep(s => s + 1)}
+                style={{
+                  flex: 1, background: formData.type || step > 1 ? accent.css : 'rgba(255,255,255,0.1)',
+                  border: 'none', borderRadius: 10, padding: '13px 20px', color: '#fff',
+                  fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)',
+                  boxShadow: formData.type || step > 1 ? `0 0 20px ${accent.glow}` : 'none',
+                  transition: 'all 0.2s',
+                }}>Continue →</button>
+            ) : (
+              <button onClick={handleSubmit} style={{
+                flex: 1, background: accent.css, border: 'none',
+                borderRadius: 10, padding: '13px 20px', color: '#fff',
+                fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)',
+                boxShadow: `0 0 24px ${accent.glow}`,
+              }}>Submit Report ⚡</button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReportSuccess({ accent, onReset }) {
+  return (
+    <div style={{
+      paddingTop: 60, minHeight: '100vh',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '60px 24px',
+    }}>
+      <div style={{ textAlign: 'center', maxWidth: 440 }}>
+        <div style={{
+          width: 80, height: 80, borderRadius: 24, margin: '0 auto 24px',
+          background: `linear-gradient(135deg, ${accent.css}30, ${accent.css}10)`,
+          border: `2px solid ${accent.css}50`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 36, boxShadow: `0 0 40px ${accent.glow}`,
+        }}>✓</div>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 36, letterSpacing: '-0.03em', marginBottom: 12 }}>Report Submitted!</h1>
+        <p style={{ color: 'var(--text2)', fontSize: 16, lineHeight: 1.7, marginBottom: 32 }}>
+          Thank you. Your report is now live and visible to the community. Together we hold DISCOs accountable.
+        </p>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <button onClick={onReset} style={{
+            background: accent.css, border: 'none', borderRadius: 10,
+            padding: '12px 22px', color: '#fff', fontSize: 14, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'var(--font-body)',
+          }}>Report Another</button>
+          <button style={{
+            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 10, padding: '12px 22px', color: 'var(--text)',
+            fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)',
+          }}>Share Report</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ROOT APP ──────────────────────────────────────────────────────
+function App() {
+  const { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakToggle } = window;
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [page, setPage] = useState('home');
+  const accent = ACCENT_MAP[tweaks.accentColor] || ACCENT_MAP.green;
+
+  // Inject CSS variable for accent
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent', accent.css);
+    document.documentElement.style.setProperty('--accent-glow', accent.glow);
+  }, [accent]);
+
+  const pageComponents = {
+    home:      <HomePage      setPage={setPage} accent={accent} variant={tweaks.homepageVariant} animated={tweaks.showAnimations} />,
+    dashboard: <DashboardPage setPage={setPage} accent={accent} />,
+    report:    <ReportPage    accent={accent} />,
+  };
+
+  return (
+    <div>
+      <NavBar page={page} setPage={setPage} accent={accent} />
+      {pageComponents[page] || pageComponents.home}
+
+      <TweaksPanel>
+        <TweakSection label="Homepage Variant">
+          <TweakRadio label="Variant" value={tweaks.homepageVariant} options={[{value:'A',label:'A'},{value:'B',label:'B'},{value:'C',label:'C'}]} onChange={v => setTweak('homepageVariant', v)} />
+        </TweakSection>
+        <TweakSection label="Accent Color">
+          <TweakRadio label="Color" value={tweaks.accentColor} options={[{value:'green',label:'Green'},{value:'blue',label:'Blue'},{value:'amber',label:'Amber'}]} onChange={v => setTweak('accentColor', v)} />
+        </TweakSection>
+        <TweakSection label="Animations">
+          <TweakToggle label="Enable animations" value={tweaks.showAnimations} onChange={v => setTweak('showAnimations', v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </div>
+  );
+}
+
+// Wait for tweaks-panel.jsx to finish exporting to window before mounting
+function mountWhenReady() {
+  if (window.useTweaks && window.TweaksPanel) {
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  } else {
+    setTimeout(mountWhenReady, 50);
+  }
+}
+mountWhenReady();
+</script>
+</body>
+</html>
