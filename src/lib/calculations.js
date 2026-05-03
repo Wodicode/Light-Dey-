@@ -316,6 +316,82 @@ export function getTodaySupplyHours(outageMap) {
 }
 
 /**
+ * Check if the user has enough data to support a formal complaint letter.
+ * Returns { ready, missedDays, daysWithData, avgSupply }.
+ */
+export function getComplaintReadiness(outageMap, band) {
+  const days = getDaysInCurrentMonth();
+  let missedDays = 0;
+  let daysWithData = 0;
+  let totalSupply = 0;
+
+  days.forEach(dateStr => {
+    const outMins = outageMap[dateStr];
+    if (outMins === undefined) return;
+    daysWithData++;
+    const supply = (24 * 60 - outMins) / 60;
+    totalSupply += supply;
+    if (!isDayThresholdMet(band, outMins)) missedDays++;
+  });
+
+  const avgSupply = daysWithData > 0 ? totalSupply / daysWithData : 0;
+  const ready = daysWithData >= 5 && missedDays >= 5;
+  return { ready, missedDays, daysWithData, avgSupply };
+}
+
+/**
+ * Detect patterns in the outage history.
+ * Returns null if there is insufficient data (fewer than 3 completed outages).
+ */
+export function detectOutagePatterns(outages) {
+  if (!outages || outages.length === 0) return null;
+  const completed = outages.filter(o => !o.is_active && o.duration_minutes > 0);
+  if (completed.length < 3) return null;
+
+  const dayCount = [0, 0, 0, 0, 0, 0, 0]; // Sun=0 … Sat=6
+  const hourCount = Array(24).fill(0);
+  let weekdayMins = 0, weekendMins = 0, weekdayCount = 0, weekendCount = 0;
+
+  completed.forEach(o => {
+    const d = parseLocalDate(o.date);
+    const dow = d.getDay();
+    dayCount[dow]++;
+    const h = parseInt(o.start_time.split(':')[0], 10);
+    hourCount[h]++;
+    if (dow === 0 || dow === 6) { weekendMins += o.duration_minutes; weekendCount++; }
+    else                         { weekdayMins  += o.duration_minutes; weekdayCount++;  }
+  });
+
+  const peakDow = dayCount.indexOf(Math.max(...dayCount));
+  const peakHour = hourCount.indexOf(Math.max(...hourCount));
+  const DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  const avgWeekday = weekdayCount > 0 ? weekdayMins  / weekdayCount : 0;
+  const avgWeekend = weekendCount > 0 ? weekendMins  / weekendCount : 0;
+  const weekendHeavy = weekendCount > 0 && avgWeekend > avgWeekday * 1.3;
+
+  const avgDuration = Math.round(
+    completed.reduce((s, o) => s + o.duration_minutes, 0) / completed.length
+  );
+
+  const longest = completed.reduce((a, b) => b.duration_minutes > a.duration_minutes ? b : a);
+
+  const peakHourLabel = peakHour === 0  ? '12 AM'
+    : peakHour < 12                     ? `${peakHour} AM`
+    : peakHour === 12                   ? '12 PM'
+    :                                     `${peakHour - 12} PM`;
+
+  return {
+    peakDayOfWeek: DOW[peakDow],
+    peakHourLabel,
+    weekendHeavy,
+    avgDuration,
+    longestOutage: { date: longest.date, duration: longest.duration_minutes },
+    totalOutages: completed.length,
+  };
+}
+
+/**
  * Get monthly stats for the current month.
  */
 export function getMonthlyStats(outageMap, band) {

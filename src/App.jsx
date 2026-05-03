@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from './supabaseClient.js';
+import { buildOutageMap, getComplaintReadiness } from './lib/calculations.js';
 import AuthScreen from './components/AuthScreen.jsx';
 import NavBar from './components/NavBar.jsx';
 import ActiveOutageBanner from './components/ActiveOutageBanner.jsx';
@@ -10,6 +11,7 @@ import ReportGenerator from './components/ReportGenerator.jsx';
 import Settings from './components/Settings.jsx';
 import Community from './components/Community.jsx';
 import Admin from './components/Admin.jsx';
+import Onboarding from './components/Onboarding.jsx';
 
 // ── Contexts ────────────────────────────────────────────────────────────────
 
@@ -57,6 +59,8 @@ export default function App() {
   const [activeOutage, setActiveOutage] = useState(null);
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [toasts, setToasts] = useState([]);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // ── Toast helpers ──────────────────────────────────────────────────────────
 
@@ -64,6 +68,19 @@ export default function App() {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }, []);
+
+  // ── Offline detection ──────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const onOnline  = () => setIsOffline(false);
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener('online',  onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online',  onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
   }, []);
 
   // ── Auth ───────────────────────────────────────────────────────────────────
@@ -90,7 +107,8 @@ export default function App() {
         .single();
       if (error && error.code !== 'PGRST116') throw error;
       setProfile(data || null);
-      if (!data) setCurrentTab('settings');
+      if (!data && !localStorage.getItem('pw_onboarded')) setShowOnboarding(true);
+      else if (!data) setCurrentTab('settings');
     } catch (err) {
       showToast('Failed to load profile. ' + err.message, 'error');
     } finally {
@@ -308,6 +326,21 @@ export default function App() {
     }
   }, [session, showToast]);
 
+  // ── Document title ────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const TAB_TITLES = {
+      dashboard: 'Home',
+      log:       'Log',
+      community: 'Community',
+      analytics: 'Analytics',
+      report:    'Report',
+      settings:  'Settings',
+      admin:     'Admin',
+    };
+    document.title = `${TAB_TITLES[currentTab] || 'Home'} · PowerWatch Nigeria`;
+  }, [currentTab]);
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (session === undefined) {
@@ -330,6 +363,12 @@ export default function App() {
   }
 
   const isAdmin = session?.user?.app_metadata?.is_admin === true;
+  const setupIncomplete = !profile?.disco || !profile?.service_band;
+  const complaintReady = useMemo(() => {
+    if (!profile || outages.length === 0) return false;
+    const map = buildOutageMap(outages);
+    return getComplaintReadiness(map, profile.service_band || 'A').ready;
+  }, [profile, outages]);
 
   const tabContent = {
     dashboard: <Dashboard />,
@@ -349,7 +388,7 @@ export default function App() {
           startOutage, endOutage, addManualOutage,
           updateOutage, deleteOutage, refreshOutages: () => fetchOutages(session.user.id),
         }}>
-          <div className="flex flex-col min-h-screen bg-bg text-textPrimary">
+          <div className="flex flex-col min-h-screen bg-bg text-textPrimary lg:pl-[220px]">
             {/* Top bar */}
             <header
               className="sticky top-0 z-40 flex items-center justify-between px-4 h-14"
@@ -386,6 +425,16 @@ export default function App() {
               </button>
             </header>
 
+            {/* Offline banner */}
+            {isOffline && (
+              <div
+                className="flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold"
+                style={{ backgroundColor: '#78350f', color: '#fbbf24', borderBottom: '1px solid #92400e' }}
+              >
+                <span>●</span> You're offline — data may be out of date
+              </div>
+            )}
+
             {/* Active outage banner */}
             <ActiveOutageBanner onNavigateToLog={() => setCurrentTab('log')} />
 
@@ -398,10 +447,19 @@ export default function App() {
 
             {/* Bottom nav */}
             {currentTab !== 'settings' && (
-              <NavBar currentTab={currentTab} onTabChange={setCurrentTab} isAdmin={isAdmin} />
+              <NavBar
+                currentTab={currentTab}
+                onTabChange={setCurrentTab}
+                isAdmin={isAdmin}
+                setupIncomplete={setupIncomplete}
+                complaintReady={complaintReady}
+              />
             )}
           </div>
           <Toast toasts={toasts} />
+          {showOnboarding && (
+            <Onboarding onComplete={() => { setShowOnboarding(false); setCurrentTab('dashboard'); }} />
+          )}
         </OutagesContext.Provider>
       </ProfileContext.Provider>
     </AuthContext.Provider>

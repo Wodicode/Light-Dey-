@@ -9,6 +9,7 @@ import {
   getLongestConsecutiveMissedStreak,
   getDaysInCurrentMonth,
   getMonthlyStats,
+  getComplaintReadiness,
   todayStr,
   formatDuration,
 } from '../lib/calculations.js';
@@ -149,6 +150,9 @@ export default function Dashboard() {
   const longestStreak = useMemo(
     () => getLongestConsecutiveMissedStreak(outageMap, band, startOfMonth, today), [outageMap, band]
   );
+  const complaintReadiness = useMemo(
+    () => getComplaintReadiness(outageMap, band), [outageMap, band]
+  );
 
   if (outagesLoading) {
     return (
@@ -247,7 +251,7 @@ export default function Dashboard() {
             label="Total Outage"
             value={`${monthStats.totalOutageHours.toFixed(1)}h`}
             sub={`${monthStats.days.length} days tracked`}
-            color="#E74C3C"
+            color={monthStats.totalOutageHours === 0 ? '#2ECC71' : '#E74C3C'}
           />
           <StatCard
             label="Days Met"
@@ -305,6 +309,14 @@ export default function Dashboard() {
             <AlertBox color="amber" title="Publication obligation">
               {currentStreak} consecutive days missed. {profile?.disco || 'Your DisCo'} is obligated to publish
               an explanation on its website by 10:00 AM the following day.
+            </AlertBox>
+          )}
+
+          {complaintReadiness.ready && (
+            <AlertBox color="green" title="Ready to file a complaint">
+              You have <strong>{complaintReadiness.missedDays} days</strong> below the Band {band} minimum
+              this month. Generate your complaint letter in the <strong>Report tab</strong> — you may be
+              entitled to a service credit under the NERC May 2024 Order.
             </AlertBox>
           )}
         </div>

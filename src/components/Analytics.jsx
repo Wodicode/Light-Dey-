@@ -12,7 +12,17 @@ import {
   getLast30Days,
   isDayThresholdMet,
   getCurrentConsecutiveMissedStreak,
+  detectOutagePatterns,
+  getComplaintReadiness,
+  formatDuration,
 } from '../lib/calculations.js';
+
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function formatRollingLabel(mmdd) {
+  const [mm, dd] = mmdd.split('-').map(Number);
+  return `${MONTH_ABBR[mm - 1]} ${dd}`;
+}
 
 const tooltipStyle = {
   backgroundColor: '#1E293B',
@@ -98,20 +108,32 @@ export default function Analytics() {
       if (supply > best.supplyHours) best = { supplyHours: supply, date: dateStr };
       if (supply < worst.supplyHours) worst = { supplyHours: supply, date: dateStr };
     });
-    return {
-      totalOutageHours: totalOutage / 60,
-      bestDay: best,
-      worstDay: worst,
-    };
+    return { totalOutageHours: totalOutage / 60, bestDay: best, worstDay: worst };
   }, [outageMap]);
 
-  const currentStreak    = useMemo(() => getCurrentConsecutiveMissedStreak(outageMap, band), [outageMap, band]);
+  const currentStreak = useMemo(
+    () => getCurrentConsecutiveMissedStreak(outageMap, band), [outageMap, band]
+  );
   const compensationLine = config.minHoursPerDay * config.compensationThreshold;
 
   const daysWithData = useMemo(
     () => getDaysInCurrentMonth().filter(d => outageMap[d] !== undefined).length,
     [outageMap]
   );
+
+  // Compliance progress (days met vs days tracked)
+  const metDays = useMemo(
+    () => monthlyData.filter(d => d.met).length,
+    [monthlyData]
+  );
+
+  // Complaint readiness
+  const readiness = useMemo(
+    () => getComplaintReadiness(outageMap, band), [outageMap, band]
+  );
+
+  // Pattern detection
+  const patterns = useMemo(() => detectOutagePatterns(outages), [outages]);
 
   if (outagesLoading) {
     return (
@@ -141,6 +163,8 @@ export default function Analytics() {
     );
   }
 
+  const compliancePct = daysWithData > 0 ? Math.round((metDays / daysWithData) * 100) : 0;
+
   return (
     <div className="px-4 py-6 flex flex-col gap-6">
       <h2 className="text-xl font-bold text-textPrimary">Analytics</h2>
@@ -148,7 +172,7 @@ export default function Analytics() {
       {daysWithData < 7 && (
         <div
           className="rounded-card px-4 py-3 text-xs"
-          style={{ backgroundColor: '#1E293B', borderLeft: '3px solid #F39C12', color: '#fbbf24' }}
+          style={{ backgroundColor: '#1E293B', borderLeft: '3px solid #F39C12', color: '#fbbf24', boxShadow: '0 0 0 1px rgba(243,156,18,0.1)' }}
         >
           {daysWithData} day{daysWithData !== 1 ? 's' : ''} tracked this month.
           Charts become more meaningful after 7+ days of data.
@@ -179,6 +203,43 @@ export default function Analytics() {
         />
       </div>
 
+      {/* Compliance progress bar */}
+      {daysWithData > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-textMuted uppercase tracking-wide">
+              Monthly Compliance
+            </h3>
+            <span
+              className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{
+                backgroundColor: compliancePct >= 90 ? 'rgba(46,204,113,0.15)' : compliancePct >= 60 ? 'rgba(243,156,18,0.15)' : 'rgba(231,76,60,0.15)',
+                color: compliancePct >= 90 ? '#2ECC71' : compliancePct >= 60 ? '#F39C12' : '#E74C3C',
+              }}
+            >
+              {compliancePct}%
+            </span>
+          </div>
+          <div className="rounded-card p-4" style={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}>
+            <div className="w-full rounded-full overflow-hidden" style={{ height: 8, backgroundColor: '#334155' }}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${compliancePct}%`,
+                  backgroundColor: compliancePct >= 90 ? '#2ECC71' : compliancePct >= 60 ? '#F39C12' : '#E74C3C',
+                }}
+              />
+            </div>
+            <p className="text-xs text-textMuted mt-2">
+              <span className="text-textPrimary font-semibold">{metDays}</span> of{' '}
+              <span className="text-textPrimary font-semibold">{daysWithData}</span> days tracked
+              met the Band {band} minimum of{' '}
+              <span className="text-textPrimary font-semibold">{config.minHoursPerDay}h/day</span>
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* Daily supply bar chart */}
       <section>
         <h3 className="text-sm font-semibold text-textMuted uppercase tracking-wide mb-3">
@@ -193,7 +254,7 @@ export default function Analytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                 <XAxis dataKey="day" tick={{ fill: '#94A3B8', fontSize: 10 }} tickLine={false} axisLine={false} />
                 <YAxis
-                  domain={[dataMin => Math.max(0, Math.floor(dataMin) - 1), 24]}
+                  domain={[0, 24]}
                   tick={{ fill: '#94A3B8', fontSize: 10 }}
                   tickLine={false}
                   axisLine={false}
@@ -231,28 +292,18 @@ export default function Analytics() {
                 tickLine={false}
                 axisLine={false}
                 interval={6}
+                tickFormatter={formatRollingLabel}
               />
               <YAxis domain={[0, 24]} tick={{ fill: '#94A3B8', fontSize: 10 }} tickLine={false} axisLine={false} tickCount={5} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: '#334155' }} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                cursor={{ stroke: '#334155' }}
+                labelFormatter={formatRollingLabel}
+              />
               <ReferenceLine y={config.minHoursPerDay} stroke="#F39C12" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: `${config.minHoursPerDay}h`, fill: '#F39C12', fontSize: 10, position: 'right' }} />
               <ReferenceLine y={compensationLine} stroke="#E74C3C" strokeDasharray="4 4" strokeWidth={1} label={{ value: `${compensationLine}h comp.`, fill: '#E74C3C', fontSize: 9, position: 'right' }} />
-              <Line
-                type="monotone"
-                dataKey="avgSupply"
-                stroke="#2ECC71"
-                strokeWidth={2}
-                dot={false}
-                name="7-day avg"
-              />
-              <Line
-                type="monotone"
-                dataKey="daySupply"
-                stroke="#94A3B8"
-                strokeWidth={1}
-                dot={false}
-                strokeOpacity={0.5}
-                name="Daily"
-              />
+              <Line type="monotone" dataKey="avgSupply" stroke="#2ECC71" strokeWidth={2} dot={false} name="7-day avg" />
+              <Line type="monotone" dataKey="daySupply" stroke="#94A3B8" strokeWidth={1} dot={false} strokeOpacity={0.5} name="Daily" />
               <Legend
                 wrapperStyle={{ fontSize: 11, color: '#94A3B8', paddingTop: 8 }}
                 formatter={(v) => <span style={{ color: '#94A3B8' }}>{v}</span>}
@@ -264,6 +315,71 @@ export default function Analytics() {
           Orange dashed = Band {band} minimum · Red dashed = 90% compensation threshold
         </p>
       </section>
+
+      {/* Pattern insights */}
+      {patterns && (
+        <section>
+          <h3 className="text-sm font-semibold text-textMuted uppercase tracking-wide mb-3">
+            Outage Patterns
+          </h3>
+          <div className="rounded-card p-4 flex flex-col gap-3" style={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}>
+            <div className="grid grid-cols-1 gap-2 text-sm">
+              <div className="flex items-start gap-2">
+                <span style={{ color: '#F39C12', fontSize: 16, lineHeight: 1.4 }}>◆</span>
+                <span style={{ color: '#94A3B8' }}>
+                  Outages most often start around{' '}
+                  <strong style={{ color: '#F8FAFC' }}>{patterns.peakHourLabel}</strong>
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span style={{ color: '#F39C12', fontSize: 16, lineHeight: 1.4 }}>◆</span>
+                <span style={{ color: '#94A3B8' }}>
+                  Most frequent outage day:{' '}
+                  <strong style={{ color: '#F8FAFC' }}>{patterns.peakDayOfWeek}</strong>
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span style={{ color: '#F39C12', fontSize: 16, lineHeight: 1.4 }}>◆</span>
+                <span style={{ color: '#94A3B8' }}>
+                  Average outage lasts{' '}
+                  <strong style={{ color: '#F8FAFC' }}>{formatDuration(patterns.avgDuration)}</strong>
+                </span>
+              </div>
+              {patterns.weekendHeavy && (
+                <div className="flex items-start gap-2">
+                  <span style={{ color: '#F39C12', fontSize: 16, lineHeight: 1.4 }}>◆</span>
+                  <span style={{ color: '#94A3B8' }}>
+                    Weekend outages are <strong style={{ color: '#F8FAFC' }}>notably longer</strong> than weekdays
+                  </span>
+                </div>
+              )}
+              <div className="flex items-start gap-2">
+                <span style={{ color: '#F39C12', fontSize: 16, lineHeight: 1.4 }}>◆</span>
+                <span style={{ color: '#94A3B8' }}>
+                  Longest outage:{' '}
+                  <strong style={{ color: '#F8FAFC' }}>{formatDuration(patterns.longestOutage.duration)}</strong>
+                  {' '}on {patterns.longestOutage.date}
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Complaint readiness prompt */}
+      {readiness.ready && (
+        <div
+          className="rounded-card px-4 py-3 text-xs"
+          style={{ backgroundColor: '#1E293B', borderLeft: '3px solid #2ECC71', color: '#86efac', boxShadow: '0 0 0 1px rgba(46,204,113,0.1)' }}
+        >
+          <p className="font-black uppercase tracking-widest text-accent mb-1" style={{ fontSize: 10 }}>
+            Ready to file a complaint
+          </p>
+          You have <strong className="text-textPrimary">{readiness.missedDays} days</strong> below the
+          Band {band} minimum this month. Head to the <strong className="text-textPrimary">Report tab</strong> to
+          generate your complaint letter.
+        </div>
+      )}
     </div>
   );
 }
