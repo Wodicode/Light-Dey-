@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS community_reports (
 ALTER TABLE community_reports ENABLE ROW LEVEL SECURITY;
 
 -- Users can manage only their own rows
+DROP POLICY IF EXISTS "community_reports_own" ON community_reports;
 CREATE POLICY "community_reports_own" ON community_reports
   FOR ALL
   USING  (auth.uid() = user_id)
