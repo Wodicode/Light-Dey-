@@ -483,7 +483,7 @@ export default function App() {
             <ActiveOutageBanner onNavigateToLog={() => setCurrentTab('log')} />
 
             {/* Page content */}
-            <main className="flex-1 overflow-y-auto pb-20">
+            <main className="flex-1 overflow-y-auto pb-16">
               <div key={currentTab} className="page-enter max-w-2xl mx-auto w-full">
                 {tabContent[currentTab] || tabContent['dashboard']}
               </div>

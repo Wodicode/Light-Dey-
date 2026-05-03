@@ -260,7 +260,7 @@ export default function Dashboard() {
           <StatCard
             label="Days on Target"
             value={`${monthStats.daysMetThreshold}`}
-            sub={`of ${monthStats.days.length} days in ${currentMonthName()} so far`}
+            sub={`supply above Band ${band} min`}
             color="#00A651"
           />
           <StatCard
@@ -270,7 +270,7 @@ export default function Dashboard() {
               complaintReadiness.ready
                 ? 'Enough to file a complaint ✓'
                 : monthStats.daysMissedThreshold === 0
-                  ? `none in ${currentMonthName()} yet`
+                  ? `none below Band ${band} min yet`
                   : `${Math.max(0, 5 - monthStats.daysMissedThreshold)} more needed to complain`
             }
             color={monthStats.daysMissedThreshold > 0 ? '#E53935' : '#00A651'}

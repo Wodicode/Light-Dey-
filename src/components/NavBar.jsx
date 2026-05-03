@@ -131,12 +131,12 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
           <button
             key={id}
             onClick={() => onTabChange(id)}
-            className="nav-tab flex-1 flex flex-col items-center justify-center py-2 gap-0.5 relative"
+            className="nav-tab flex-1 flex flex-col items-center justify-center py-1 gap-0.5 relative"
             style={{ color: active ? '#00A651' : '#4A5470' }}
             aria-label={label}
           >
             <div
-              className="flex items-center justify-center w-11 h-7 rounded-lg relative"
+              className="flex items-center justify-center w-10 h-6 rounded-lg relative"
               style={{
                 backgroundColor: active ? 'rgba(0,166,81,0.12)' : 'transparent',
                 transition: 'background-color 0.15s ease',
