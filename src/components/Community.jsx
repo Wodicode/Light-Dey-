@@ -85,6 +85,10 @@ export default function Community() {
     const layer = L.layerGroup().addTo(map);
     layerRef.current       = layer;
     mapInstanceRef.current = map;
+
+    // Force tile redraw after CSS page-enter animation completes
+    setTimeout(() => map.invalidateSize(), 250);
+
     setMapReady(true);
 
     return () => {
