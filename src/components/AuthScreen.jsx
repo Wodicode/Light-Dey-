@@ -53,41 +53,58 @@ export default function AuthScreen() {
     return msg;
   };
 
+  const inputCls = 'w-full px-3 py-2.5 rounded-btn text-sm text-textPrimary outline-none transition-all duration-150';
+  const inputSty = { backgroundColor: '#0a1120', border: '1px solid #334155', boxShadow: '0 1px 0 rgba(255,255,255,0.03) inset' };
+  const inputFocusSty = { border: '1px solid rgba(46,204,113,0.5)', boxShadow: '0 0 0 3px rgba(46,204,113,0.12), 0 1px 0 rgba(255,255,255,0.03) inset' };
+
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         {/* Wordmark */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">⚡</div>
-          <h1 className="text-2xl font-bold text-textPrimary tracking-tight">PowerWatch Nigeria</h1>
-          <p className="text-textMuted text-sm mt-1">Track your electricity supply. Know your rights.</p>
+          <div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 text-3xl"
+            style={{
+              background: 'linear-gradient(135deg, #1a2a1f 0%, #1E293B 100%)',
+              boxShadow: '0 0 0 1px rgba(46,204,113,0.2), 0 8px 32px rgba(0,0,0,0.3)',
+            }}
+          >
+            ⚡
+          </div>
+          <h1 className="text-2xl font-black text-textPrimary tracking-tight">PowerWatch Nigeria</h1>
+          <p className="text-xs font-medium mt-1.5 uppercase tracking-widest" style={{ color: '#475569' }}>
+            Track supply · Know your rights
+          </p>
         </div>
 
         {/* Card */}
         <div
           className="rounded-card p-6"
-          style={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}
+          style={{
+            backgroundColor: '#1E293B',
+            boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 24px 48px rgba(0,0,0,0.4)',
+          }}
         >
-          <h2 className="text-lg font-semibold text-textPrimary mb-5">
-            {mode === 'signin' && 'Sign in to your account'}
-            {mode === 'signup' && 'Create an account'}
-            {mode === 'reset' && 'Reset your password'}
+          <h2 className="text-sm font-black uppercase tracking-widest mb-5" style={{ color: '#64748B' }}>
+            {mode === 'signin' && 'Sign in'}
+            {mode === 'signup' && 'Create account'}
+            {mode === 'reset' && 'Reset password'}
           </h2>
 
           {error && (
-            <div className="mb-4 px-4 py-3 rounded-btn text-sm text-white" style={{ backgroundColor: '#E74C3C22', border: '1px solid #E74C3C', color: '#fca5a5' }}>
+            <div className="mb-4 px-4 py-3 rounded-btn text-xs font-medium" style={{ backgroundColor: '#E74C3C12', borderLeft: '3px solid #E74C3C', color: '#fca5a5' }}>
               {error}
             </div>
           )}
           {successMsg && (
-            <div className="mb-4 px-4 py-3 rounded-btn text-sm" style={{ backgroundColor: '#2ECC7122', border: '1px solid #2ECC71', color: '#86efac' }}>
+            <div className="mb-4 px-4 py-3 rounded-btn text-xs font-medium" style={{ backgroundColor: '#2ECC7112', borderLeft: '3px solid #2ECC71', color: '#86efac' }}>
               {successMsg}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="block text-sm font-medium text-textMuted mb-1">Email address</label>
+              <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: '#475569' }}>Email</label>
               <input
                 type="email"
                 required
@@ -95,14 +112,16 @@ export default function AuthScreen() {
                 onChange={e => setEmail(e.target.value)}
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="w-full px-3 py-2.5 rounded-btn text-sm text-textPrimary placeholder-textMuted/50 outline-none focus:ring-2 focus:ring-accent"
-                style={{ backgroundColor: '#0F172A', border: '1px solid #334155' }}
+                className={inputCls}
+                style={inputSty}
+                onFocus={e => Object.assign(e.target.style, inputFocusSty)}
+                onBlur={e => Object.assign(e.target.style, inputSty)}
               />
             </div>
 
             {mode !== 'reset' && (
               <div>
-                <label className="block text-sm font-medium text-textMuted mb-1">Password</label>
+                <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: '#475569' }}>Password</label>
                 <input
                   type="password"
                   required
@@ -110,8 +129,10 @@ export default function AuthScreen() {
                   onChange={e => setPassword(e.target.value)}
                   autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                   placeholder="••••••••"
-                  className="w-full px-3 py-2.5 rounded-btn text-sm text-textPrimary placeholder-textMuted/50 outline-none focus:ring-2 focus:ring-accent"
-                  style={{ backgroundColor: '#0F172A', border: '1px solid #334155' }}
+                  className={inputCls}
+                  style={inputSty}
+                  onFocus={e => Object.assign(e.target.style, inputFocusSty)}
+                  onBlur={e => Object.assign(e.target.style, inputSty)}
                 />
               </div>
             )}
@@ -119,8 +140,12 @@ export default function AuthScreen() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-btn font-semibold text-sm transition-opacity disabled:opacity-60"
-              style={{ backgroundColor: '#2ECC71', color: '#0F172A' }}
+              className="btn-press w-full py-3 rounded-btn font-black text-sm uppercase tracking-widest disabled:opacity-50"
+              style={{
+                background: 'linear-gradient(180deg, #2ECC71 0%, #27AE60 100%)',
+                color: '#0a1a0f',
+                boxShadow: '0 1px 0 rgba(255,255,255,0.15) inset, 0 4px 12px rgba(46,204,113,0.2)',
+              }}
             >
               {loading ? 'Please wait…' : (
                 mode === 'signin' ? 'Sign In' :

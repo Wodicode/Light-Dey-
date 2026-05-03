@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Pencil, Trash2, ChevronDown, ChevronUp, Zap, ZapOff } from 'lucide-react';
 import { useOutages } from '../App.jsx';
 import { formatDuration, formatElapsedSeconds } from '../lib/calculations.js';
 
@@ -103,33 +103,61 @@ export default function OutageLog() {
   return (
     <div className="px-4 py-6 flex flex-col gap-6">
       {/* Quick-tap section */}
-      <section className="flex flex-col items-center gap-4">
+      <section className="flex flex-col gap-4">
         {activeOutage ? (
           <>
-            <div className="text-center">
-              <p className="text-textMuted text-sm mb-1">Power has been out for</p>
-              <p className="text-3xl font-bold text-danger tabular-nums">{formatElapsedSeconds(elapsed)}</p>
-              <p className="text-textMuted text-xs mt-1">
-                Started {activeOutage.date} at {activeOutage.start_time}
+            {/* Live timer */}
+            <div
+              className="rounded-card px-4 py-5 text-center"
+              style={{
+                backgroundColor: '#1E293B',
+                boxShadow: '0 0 0 1px rgba(231,76,60,0.2), 0 0 32px rgba(231,76,60,0.08)',
+              }}
+            >
+              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#E74C3C' }}>
+                ● Outage in progress
+              </p>
+              <p
+                className="text-5xl font-black tabular-nums leading-none tracking-tight"
+                style={{ color: '#E74C3C' }}
+              >
+                {formatElapsedSeconds(elapsed)}
+              </p>
+              <p className="text-xs mt-3" style={{ color: '#475569' }}>
+                Since {activeOutage.date} at {activeOutage.start_time}
               </p>
             </div>
+
             <button
               onClick={endOutage}
-              className="btn-restore w-full max-w-xs py-5 rounded-card font-bold text-xl text-white tracking-wide uppercase transition-transform active:scale-95"
-              style={{ backgroundColor: '#2ECC71' }}
+              className="btn-restore w-full py-6 rounded-card font-black text-xl tracking-widest uppercase"
+              style={{
+                background: 'linear-gradient(180deg, #2ECC71 0%, #27AE60 100%)',
+                color: '#0a1a0f',
+              }}
             >
-              LIGHT IS BACK
+              <span className="flex items-center justify-center gap-3">
+                <Zap size={22} strokeWidth={2.5} />
+                LIGHT IS BACK
+              </span>
             </button>
           </>
         ) : (
           <>
-            <p className="text-textMuted text-sm text-center">Power went out? Tap to start tracking.</p>
+            <p className="text-xs font-semibold text-center uppercase tracking-widest" style={{ color: '#475569' }}>
+              Power went out? Tap to start tracking.
+            </p>
             <button
               onClick={startOutage}
-              className="btn-outage w-full max-w-xs py-5 rounded-card font-bold text-xl text-white tracking-wide uppercase transition-transform active:scale-95"
-              style={{ backgroundColor: '#E74C3C' }}
+              className="btn-outage w-full py-6 rounded-card font-black text-xl tracking-widest uppercase text-white"
+              style={{
+                background: 'linear-gradient(180deg, #E74C3C 0%, #C0392B 100%)',
+              }}
             >
-              LIGHT IS OFF
+              <span className="flex items-center justify-center gap-3">
+                <ZapOff size={22} strokeWidth={2.5} />
+                LIGHT IS OFF
+              </span>
             </button>
           </>
         )}

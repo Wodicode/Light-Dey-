@@ -11,8 +11,13 @@ const TABS = [
 export default function NavBar({ currentTab, onTabChange }) {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch"
-      style={{ backgroundColor: '#1E293B', borderTop: '1px solid #334155' }}
+      className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch px-1"
+      style={{
+        backgroundColor: 'rgba(10,17,33,0.96)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderTop: '1px solid rgba(51,65,85,0.5)',
+      }}
     >
       {TABS.map(({ id, label, Icon }) => {
         const active = currentTab === id;
@@ -20,12 +25,26 @@ export default function NavBar({ currentTab, onTabChange }) {
           <button
             key={id}
             onClick={() => onTabChange(id)}
-            className="flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors"
-            style={{ color: active ? '#2ECC71' : '#94A3B8' }}
+            className="nav-tab flex-1 flex flex-col items-center justify-center py-2 gap-0.5"
+            style={{ color: active ? '#2ECC71' : '#4B5563' }}
             aria-label={label}
           >
-            <Icon size={20} strokeWidth={active ? 2.5 : 1.8} />
-            <span className="text-xs font-medium">{label}</span>
+            {/* Icon wrapped in pill */}
+            <div
+              className="flex items-center justify-center w-11 h-7 rounded-lg"
+              style={{
+                backgroundColor: active ? 'rgba(46,204,113,0.14)' : 'transparent',
+                transition: 'background-color 0.15s ease',
+              }}
+            >
+              <Icon size={20} strokeWidth={active ? 2.5 : 1.7} />
+            </div>
+            <span
+              className="text-xs tracking-tight"
+              style={{ fontWeight: active ? 700 : 500 }}
+            >
+              {label}
+            </span>
           </button>
         );
       })}

@@ -27,8 +27,15 @@ function Toast({ toasts }) {
       {toasts.map(t => (
         <div
           key={t.id}
-          className={`px-4 py-3 rounded-btn text-sm font-medium shadow-lg pointer-events-auto transition-all
-            ${t.type === 'error' ? 'bg-danger text-white' : 'bg-accent text-bg'}`}
+          className="toast-enter px-4 py-3 rounded-btn text-sm font-semibold pointer-events-auto"
+          style={{
+            backgroundColor: t.type === 'error' ? '#E74C3C' : '#1a2a1f',
+            color: '#F8FAFC',
+            border: `1px solid ${t.type === 'error' ? 'rgba(255,255,255,0.12)' : 'rgba(46,204,113,0.35)'}`,
+            boxShadow: t.type === 'error'
+              ? '0 4px 20px rgba(231,76,60,0.3), 0 1px 0 rgba(255,255,255,0.08) inset'
+              : '0 4px 20px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.06) inset',
+          }}
         >
           {t.message}
         </div>
@@ -277,9 +284,13 @@ export default function App() {
   if (session === undefined) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-bg">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin" />
-          <p className="text-textMuted text-sm">Loading PowerWatch Nigeria…</p>
+        <div className="flex flex-col items-center gap-5">
+          <div className="relative w-12 h-12">
+            <div className="absolute inset-0 rounded-full border-2 border-accent/20" />
+            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-accent animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center text-lg">⚡</div>
+          </div>
+          <p className="text-textMuted text-xs font-medium tracking-widest uppercase">PowerWatch Nigeria</p>
         </div>
       </div>
     );
@@ -308,23 +319,35 @@ export default function App() {
           <div className="flex flex-col min-h-screen bg-bg text-textPrimary">
             {/* Top bar */}
             <header
-              className="sticky top-0 z-40 flex items-center justify-between px-4 h-14 transition-colors duration-300"
-              style={{ backgroundColor: activeOutage ? '#E74C3C' : '#1E293B', borderBottom: '1px solid #334155' }}
+              className="sticky top-0 z-40 flex items-center justify-between px-4 h-14"
+              style={{
+                backgroundColor: activeOutage ? 'rgba(192,57,43,0.97)' : 'rgba(10,17,33,0.94)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                borderBottom: `1px solid ${activeOutage ? 'rgba(255,255,255,0.08)' : 'rgba(51,65,85,0.5)'}`,
+                boxShadow: activeOutage ? '0 4px 24px rgba(231,76,60,0.2)' : 'none',
+                transition: 'background-color 0.4s ease, box-shadow 0.4s ease',
+              }}
             >
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold tracking-tight" style={{ color: activeOutage ? '#fff' : '#F8FAFC' }}>
-                  ⚡ PowerWatch
+              <div className="flex items-center gap-2.5">
+                <span className="text-lg" aria-hidden>⚡</span>
+                <span className="font-black text-base tracking-tight text-textPrimary">
+                  PowerWatch
                 </span>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-black/20 text-white hidden sm:block">
+                <span
+                  className="text-xs font-semibold px-1.5 py-0.5 rounded-md hidden sm:block"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#94A3B8' }}
+                >
                   Nigeria
                 </span>
               </div>
               <button
                 onClick={() => setCurrentTab('settings')}
-                className="p-2 rounded-btn hover:bg-white/10 transition-colors"
+                className="btn-press w-9 h-9 rounded-btn flex items-center justify-center"
+                style={{ color: '#94A3B8', backgroundColor: 'rgba(255,255,255,0.05)' }}
                 aria-label="Settings"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
               </button>
@@ -335,7 +358,7 @@ export default function App() {
 
             {/* Page content */}
             <main className="flex-1 overflow-y-auto pb-20">
-              <div className="max-w-2xl mx-auto w-full">
+              <div key={currentTab} className="page-enter max-w-2xl mx-auto w-full">
                 {tabContent[currentTab] || tabContent['dashboard']}
               </div>
             </main>
