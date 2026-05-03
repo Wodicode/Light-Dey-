@@ -1,12 +1,12 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, Mail } from 'lucide-react';
 import { useProfile, useOutages, useAuth } from '../App.jsx';
 import { buildComplaintLetter, buildCSV, buildRechargeCSV, downloadFile } from '../lib/reportBuilder.js';
-import { todayStr } from '../lib/calculations.js';
+import { todayStr, DISCO_INFO, NERC_HQ } from '../lib/calculations.js';
 import { supabase } from '../supabaseClient.js';
 
 export default function ReportGenerator() {
-  const { profile } = useProfile();
+  const { profile, saveProfile } = useProfile();
   const { outages, outagesLoading } = useOutages();
   const { session } = useAuth();
 
@@ -49,6 +49,23 @@ export default function ReportGenerator() {
     downloadFile(csv, filename, 'text/csv');
   };
 
+  const handleSendEmail = useCallback(async () => {
+    if (!letter || !profile) return;
+    const discoInfo = DISCO_INFO[profile.disco] || DISCO_INFO['AEDC'];
+    const toEmail = discoInfo.email || '';
+    const ccEmail = [
+      discoInfo.nercForumOffice?.email || 'abujaforum@nerc.gov.ng',
+      NERC_HQ?.complaintsEmail || 'complaints@nerc.gov.ng',
+    ].join(',');
+    const subject = encodeURIComponent(
+      `Formal Complaint – Band ${profile.service_band} Supply Breach – ${new Date().toLocaleDateString('en-NG', { month: 'long', year: 'numeric' })}`
+    );
+    const body = encodeURIComponent(letter);
+    window.location.href = `mailto:${toEmail}?cc=${ccEmail}&subject=${subject}&body=${body}`;
+    const currentCount = profile.complaints_filed || 0;
+    await saveProfile({ complaints_filed: currentCount + 1 });
+  }, [letter, profile, saveProfile]);
+
   return (
     <div className="px-4 py-6 flex flex-col gap-6">
       <h2
@@ -72,7 +89,16 @@ export default function ReportGenerator() {
           style={{ background: 'linear-gradient(180deg, #00A651 0%, #008f47 100%)', color: '#001a0f' }}
         >
           <Download size={17} />
-          Generate Complaint Letter
+          Download Complaint Letter
+        </button>
+        <button
+          onClick={handleSendEmail}
+          disabled={!profile || !letter || outagesLoading}
+          className="flex items-center justify-center gap-2 py-3 px-4 rounded-btn font-semibold text-sm transition-opacity disabled:opacity-40 btn-glow"
+          style={{ background: 'linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%)', color: '#fff' }}
+        >
+          <Mail size={17} />
+          Send via Email
         </button>
         <button
           onClick={handleDownloadCSV}
@@ -86,7 +112,7 @@ export default function ReportGenerator() {
         <button
           onClick={handleDownloadRechargeCSV}
           disabled={recharges.length === 0}
-          className="flex items-center justify-center gap-2 py-3 px-4 rounded-btn font-semibold text-sm transition-opacity disabled:opacity-40 sm:col-span-2"
+          className="flex items-center justify-center gap-2 py-3 px-4 rounded-btn font-semibold text-sm transition-opacity disabled:opacity-40"
           style={{ backgroundColor: '#111827', color: '#F0F4FF', border: '1px solid rgba(255,255,255,0.1)' }}
         >
           <FileText size={17} />
@@ -144,9 +170,8 @@ export default function ReportGenerator() {
         <ol className="text-sm text-textMuted flex flex-col gap-2 list-decimal list-inside">
           <li>Log all your power outages in the <strong className="text-textPrimary">Log</strong> tab for at least a week.</li>
           <li>Check the <strong className="text-textPrimary">Dashboard</strong> to confirm threshold breaches.</li>
-          <li>Tap <strong className="text-textPrimary">Generate Complaint Letter</strong> to download a .txt file.</li>
-          <li>Email the letter to your DisCo's customer care address (see Settings).</li>
-          <li>CC: NERC Abuja Forum Office — the letter includes this automatically.</li>
+          <li>Tap <strong className="text-textPrimary">Send via Email</strong> to open your email app with the complaint pre-filled — or download it as a .txt file.</li>
+          <li>The email is addressed to your DisCo and CC'd to the NERC Forum Office automatically.</li>
           <li>If no response within 14 days, escalate to NERC HQ at complaints@nerc.gov.ng.</li>
         </ol>
       </section>

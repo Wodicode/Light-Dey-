@@ -13,6 +13,7 @@ import Community from './components/Community.jsx';
 import Admin from './components/Admin.jsx';
 import Onboarding from './components/Onboarding.jsx';
 import SpendTracker from './components/SpendTracker.jsx';
+import Badges from './components/Badges.jsx';
 
 // ── Contexts ────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export default function App() {
   const [outages, setOutages] = useState([]);
   const [outagesLoading, setOutagesLoading] = useState(false);
   const [activeOutage, setActiveOutage] = useState(null);
+  const [confirmations, setConfirmations] = useState([]);
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [toasts, setToasts] = useState([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -139,16 +141,43 @@ export default function App() {
     }
   }, [showToast]);
 
+  const fetchConfirmations = useCallback(async (userId) => {
+    try {
+      const { data } = await supabase
+        .from('daily_confirmations')
+        .select('date')
+        .eq('user_id', userId);
+      setConfirmations(data || []);
+    } catch (_) {}
+  }, []);
+
+  const addConfirmation = useCallback(async (dateStr) => {
+    if (!session?.user) return;
+    try {
+      await supabase
+        .from('daily_confirmations')
+        .upsert({ user_id: session.user.id, date: dateStr }, { onConflict: 'user_id,date' });
+      setConfirmations(prev =>
+        prev.some(c => c.date === dateStr) ? prev : [...prev, { date: dateStr }]
+      );
+      showToast('Logged — streak maintained!');
+    } catch (err) {
+      showToast('Failed to log: ' + err.message, 'error');
+    }
+  }, [session, showToast]);
+
   useEffect(() => {
     if (session?.user) {
       fetchProfile(session.user.id);
       fetchOutages(session.user.id);
+      fetchConfirmations(session.user.id);
     } else if (session === null) {
       setProfile(null);
       setOutages([]);
       setActiveOutage(null);
+      setConfirmations([]);
     }
-  }, [session, fetchProfile, fetchOutages]);
+  }, [session, fetchProfile, fetchOutages, fetchConfirmations]);
 
   // ── Outage mutations ───────────────────────────────────────────────────────
 
@@ -347,6 +376,7 @@ export default function App() {
       report:    'Report',
       settings:  'Settings',
       admin:     'Admin',
+      badges:    'Badges',
     };
     document.title = `${TAB_TITLES[currentTab] || 'Home'} · PowerWatch Nigeria`;
   }, [currentTab]);
@@ -376,7 +406,7 @@ export default function App() {
   const setupIncomplete = !profile?.disco || !profile?.service_band;
 
   const tabContent = {
-    dashboard: <Dashboard />,
+    dashboard: <Dashboard onViewBadges={() => setCurrentTab('badges')} />,
     log:       <OutageLog />,
     community: <Community />,
     analytics: <Analytics />,
@@ -384,6 +414,7 @@ export default function App() {
     report:    <ReportGenerator />,
     settings:  <Settings onSaved={() => setCurrentTab('dashboard')} />,
     admin:     <Admin />,
+    badges:    <Badges onBack={() => setCurrentTab('dashboard')} />,
   };
 
   return (
@@ -393,6 +424,7 @@ export default function App() {
           outages, outagesLoading, activeOutage,
           startOutage, endOutage, addManualOutage,
           updateOutage, deleteOutage, refreshOutages: () => fetchOutages(session.user.id),
+          confirmations, addConfirmation,
         }}>
           <div className="flex flex-col min-h-screen bg-bg text-textPrimary lg:pl-[220px]">
             {/* Top bar */}

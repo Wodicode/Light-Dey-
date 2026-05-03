@@ -42,7 +42,7 @@ function groupByMonth(outages) {
 }
 
 export default function OutageLog() {
-  const { outages, activeOutage, startOutage, endOutage, addManualOutage, updateOutage, deleteOutage } = useOutages();
+  const { outages, activeOutage, startOutage, endOutage, addManualOutage, updateOutage, deleteOutage, confirmations, addConfirmation } = useOutages();
 
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -71,6 +71,10 @@ export default function OutageLog() {
   const [collapsedMonths, setCollapsedMonths] = useState({});
 
   const monthGroups = useMemo(() => groupByMonth(outages), [outages]);
+
+  const today = todayLocal();
+  const todayConfirmed = (confirmations || []).some(c => c.date === today);
+  const todayHasOutage = outages.some(o => o.date === today);
 
   const setManual = (key) => (e) => setManualForm(f => ({ ...f, [key]: e.target.value }));
   const setEdit = (key) => (e) => setEditForm(f => ({ ...f, [key]: e.target.value }));
@@ -192,6 +196,25 @@ export default function OutageLog() {
           Log a past outage manually
           {showManual ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
+      )}
+
+      {!activeOutage && !todayHasOutage && (
+        todayConfirmed ? (
+          <div
+            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-btn text-sm"
+            style={{ backgroundColor: 'rgba(0,166,81,0.06)', border: '1px solid rgba(0,166,81,0.2)', color: '#4A5470' }}
+          >
+            <span style={{ color: '#00A651' }}>✓</span> No outage today — streak maintained
+          </div>
+        ) : (
+          <button
+            onClick={() => addConfirmation(today)}
+            className="w-full py-2.5 px-4 rounded-btn text-sm font-semibold flex items-center justify-center gap-2"
+            style={{ border: '1px solid rgba(255,255,255,0.1)', color: '#8B95B0', backgroundColor: 'transparent' }}
+          >
+            No outage today — confirm to keep streak
+          </button>
+        )
       )}
 
       {showManual && !activeOutage && (

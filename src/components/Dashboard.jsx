@@ -13,6 +13,7 @@ import {
   todayStr,
   formatDuration,
 } from '../lib/calculations.js';
+import { getStreakData, getCurrentTier } from '../lib/gamification.js';
 
 // ── Stat card with colored top accent bar ────────────────────────────────────
 function StatCard({ label, value, sub, color }) {
@@ -112,9 +113,9 @@ function currentMonthName() {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Dashboard() {
+export default function Dashboard({ onViewBadges }) {
   const { profile } = useProfile();
-  const { outages, outagesLoading, activeOutage } = useOutages();
+  const { outages, outagesLoading, activeOutage, confirmations } = useOutages();
 
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -156,6 +157,15 @@ export default function Dashboard() {
   );
   const complaintReadiness = useMemo(
     () => getComplaintReadiness(outageMap, band), [outageMap, band]
+  );
+
+  const { streak, todayLogged } = useMemo(
+    () => getStreakData(outages, confirmations || []),
+    [outages, confirmations]
+  );
+  const currentTier = useMemo(
+    () => getCurrentTier(outages, profile?.complaints_filed || 0, streak),
+    [outages, profile?.complaints_filed, streak]
   );
 
   if (outagesLoading) {
@@ -361,6 +371,70 @@ export default function Dashboard() {
               entitled to a service credit under the NERC May 2024 Order.
             </AlertBox>
           )}
+        </div>
+      </section>
+
+      {/* ── Rank & Streak ── */}
+      <section>
+        <SectionHeading>Your Rank</SectionHeading>
+        <div
+          className="rounded-card p-4 flex items-center gap-4"
+          style={{
+            backgroundColor: '#111827',
+            border: currentTier
+              ? `1px solid ${currentTier.color}40`
+              : '1px solid rgba(255,255,255,0.07)',
+            boxShadow: currentTier ? `0 0 20px ${currentTier.glow}` : 'none',
+          }}
+        >
+          {/* Streak ring */}
+          <div
+            className="flex flex-col items-center justify-center shrink-0 rounded-full"
+            style={{
+              width: 60, height: 60,
+              background: currentTier
+                ? `radial-gradient(circle, ${currentTier.glow} 0%, transparent 70%)`
+                : 'rgba(255,255,255,0.04)',
+              border: `2px solid ${currentTier ? currentTier.color : 'rgba(255,255,255,0.1)'}`,
+            }}
+          >
+            <span
+              className="text-xl font-black tabular-nums leading-none"
+              style={{ color: currentTier ? currentTier.color : '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
+            >
+              {streak}
+            </span>
+            <span className="text-[9px] uppercase tracking-widest" style={{ color: '#4A5470' }}>days</span>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-base font-black leading-tight"
+              style={{ color: currentTier ? currentTier.color : '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
+            >
+              {currentTier ? currentTier.label : 'No Rank Yet'}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: '#4A5470' }}>
+              {streak === 0
+                ? 'Log an outage or confirm nothing today to start your streak.'
+                : todayLogged
+                  ? `${streak}-day streak — keep it going!`
+                  : `${streak}-day streak — log today to maintain it.`
+              }
+            </p>
+          </div>
+
+          <button
+            onClick={onViewBadges}
+            className="shrink-0 px-3 py-2 rounded-btn text-xs font-bold"
+            style={{
+              backgroundColor: currentTier ? `${currentTier.color}18` : 'rgba(255,255,255,0.06)',
+              color: currentTier ? currentTier.color : '#8B95B0',
+              border: `1px solid ${currentTier ? `${currentTier.color}35` : 'rgba(255,255,255,0.1)'}`,
+            }}
+          >
+            Badges
+          </button>
         </div>
       </section>
     </div>
