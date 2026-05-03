@@ -62,6 +62,93 @@
   }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
   @keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+
+  /* ── Marquee ticker ───────────────────────── */
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .ticker-inner {
+    display: flex; gap: 40px; width: max-content; align-items: center;
+    animation: marquee 36s linear infinite;
+  }
+  .ticker-inner:hover { animation-play-state: paused; }
+
+  /* ── Scroll reveal ────────────────────────── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1), transform 0.65s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.08s; }
+  .reveal-delay-2 { transition-delay: 0.16s; }
+  .reveal-delay-3 { transition-delay: 0.24s; }
+  .reveal-delay-4 { transition-delay: 0.32s; }
+
+  /* ── Feature card hover ──────────────────── */
+  .feature-card {
+    transition: background 0.22s ease, border-color 0.22s ease,
+                transform 0.22s cubic-bezier(0.16,1,0.3,1), box-shadow 0.22s ease !important;
+  }
+  .feature-card:hover {
+    background: rgba(255,255,255,0.07) !important;
+    border-color: rgba(0,166,81,0.35) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,166,81,0.12) !important;
+  }
+
+  /* ── KPI card hover ──────────────────────── */
+  .kpi-card {
+    transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease !important;
+    cursor: default;
+  }
+  .kpi-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.3) !important;
+  }
+
+  /* ── State list row hover ────────────────── */
+  .state-row {
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease !important;
+  }
+  .state-row:hover {
+    transform: translateX(3px) !important;
+  }
+
+  /* ── Button hover lift ───────────────────── */
+  .btn-primary-glow {
+    transition: box-shadow 0.2s ease, transform 0.15s ease !important;
+  }
+  .btn-primary-glow:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 0 40px rgba(0,166,81,0.45) !important;
+  }
+  .btn-primary-glow:active { transform: translateY(0) !important; }
+
+  .btn-ghost-hover {
+    transition: background 0.2s ease, transform 0.15s ease !important;
+  }
+  .btn-ghost-hover:hover {
+    background: rgba(255,255,255,0.1) !important;
+    transform: translateY(-2px) !important;
+  }
+
+  /* ── Logo icon spin-on-hover ─────────────── */
+  .logo-icon { transition: box-shadow 0.3s ease; }
+  .logo-icon:hover {
+    box-shadow: 0 0 28px rgba(0,166,81,0.55) !important;
+  }
+
+  /* ── Nav link hover ──────────────────────── */
+  .nav-link-item {
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease !important;
+  }
+  .nav-link-item:hover {
+    color: #00A651 !important;
+    background: rgba(0,166,81,0.06) !important;
+  }
+
   @keyframes mapPing {
     0% { transform: scale(1); opacity: 1; }
     100% { transform: scale(3); opacity: 0; }
@@ -153,13 +240,13 @@ function NavBar({ page, setPage, accent }) {
       {/* Desktop nav */}
       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         {[['home','Home'],['dashboard','Map & Stats'],['report','Report']].map(([id, label]) => (
-          <button key={id} onClick={() => setPage(id)} style={{
+          <button key={id} onClick={() => setPage(id)} className="nav-link-item" style={{
             background: page === id ? `${accentColor}18` : 'none',
             border: page === id ? `1px solid ${accentColor}40` : '1px solid transparent',
             borderRadius: 8, padding: '6px 14px',
             color: page === id ? accentColor : 'var(--text2)',
             fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500,
-            cursor: 'pointer', transition: 'all 0.2s',
+            cursor: 'pointer',
           }}>{label}</button>
         ))}
         <button onClick={() => setPage('report')} style={{
@@ -223,10 +310,10 @@ function HomePage({ setPage, accent, variant, animated }) {
 
   // Stats ticker data
   const stats = [
-    { label: 'Active Reports', value: '1,247', icon: '⚡' },
-    { label: 'Areas Monitored', value: '3,891', icon: '📍' },
-    { label: 'Avg Uptime Today', value: '43%', icon: '📊' },
-    { label: 'States Covered', value: '36', icon: '🗺️' },
+    { label: 'Reports Today', value: '1,247', icon: '⚡' },
+    { label: 'Streets Tracked', value: '3,891', icon: '📍' },
+    { label: 'National Avg Uptime', value: '43%', icon: '📊' },
+    { label: 'States Live', value: '36', icon: '🗺️' },
   ];
 
   if (variant === 'A') return <HomeVariantA setPage={setPage} accent={accent} anim={anim} stats={stats} />;
@@ -274,7 +361,7 @@ function HomeVariantA({ setPage, accent, anim, stats }) {
               letterSpacing: '0.08em', textTransform: 'uppercase',
             }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: accent.css, animation: 'pulse 2s infinite' }}></span>
-              Live Nationwide Monitoring
+              Live · Every street. Every minute.
             </span>
           </div>
 
@@ -298,22 +385,22 @@ function HomeVariantA({ setPage, accent, anim, stats }) {
             lineHeight: 1.6, marginBottom: 40, maxWidth: 520, margin: '0 auto 40px',
             fontWeight: 300,
           }}>
-            Track outages, report power cuts, and see real-time electricity availability across every neighbourhood in Nigeria.
+            No more guessing. No more generator surprises. Know what's happening on your street before you leave the house — and hold your DISCO accountable when they fall short.
           </p>
 
           <div style={{ ...anim(300), display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 60 }}>
-            <button onClick={() => setPage('dashboard')} style={{
+            <button onClick={() => setPage('dashboard')} className="btn-primary-glow" style={{
               background: accent.css, border: 'none', borderRadius: 12,
               padding: '14px 28px', color: '#fff', fontSize: 16, fontWeight: 600,
               cursor: 'pointer', boxShadow: `0 0 32px ${accent.glow}`,
-              fontFamily: 'var(--font-body)', transition: 'transform 0.2s',
+              fontFamily: 'var(--font-body)',
             }}>View Live Map →</button>
-            <button onClick={() => setPage('report')} style={{
+            <button onClick={() => setPage('report')} className="btn-ghost-hover" style={{
               background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
               borderRadius: 12, padding: '14px 28px', color: 'var(--text)',
               fontSize: 16, fontWeight: 500, cursor: 'pointer',
-              fontFamily: 'var(--font-body)', transition: 'background 0.2s',
-            }}>Report Outage</button>
+              fontFamily: 'var(--font-body)',
+            }}>Log My Outage</button>
           </div>
 
           {/* Stats row */}
@@ -520,30 +607,29 @@ function SearchBar({ accent, setPage }) {
 }
 
 function StatusTickerSection({ accent }) {
+  const items = [...MOCK_STATES, ...MOCK_STATES]; // duplicate for seamless loop
   return (
     <div style={{
       background: 'rgba(255,255,255,0.02)',
       borderTop: '1px solid var(--border)',
       borderBottom: '1px solid var(--border)',
-      padding: '14px 0', overflow: 'hidden',
+      padding: '12px 0', overflow: 'hidden',
     }}>
-      <div style={{
-        display: 'flex', gap: 32, animation: 'none', whiteSpace: 'nowrap',
-        overflowX: 'auto', padding: '0 24px',
-        scrollbarWidth: 'none',
-      }}>
-        {MOCK_STATES.map((s, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      <div className="ticker-inner">
+        {items.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, padding: '0 8px' }}>
             <span style={{
-              width: 8, height: 8, borderRadius: '50%',
+              width: 7, height: 7, borderRadius: '50%',
               background: STATUS_COLOR[s.status],
               animation: s.status !== 'off' ? 'pulse 2s infinite' : 'none',
               flexShrink: 0,
+              boxShadow: s.status !== 'off' ? `0 0 6px ${STATUS_COLOR[s.status]}80` : 'none',
             }}></span>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, color: 'var(--text2)', letterSpacing: '0.04em' }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text2)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
               {s.name}
             </span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: STATUS_COLOR[s.status] }}>{s.uptime}%</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: STATUS_COLOR[s.status], fontFamily: 'var(--font-display)' }}>{s.uptime}%</span>
+            <span style={{ color: 'rgba(255,255,255,0.06)', fontSize: 14, marginLeft: 8 }}>·</span>
           </div>
         ))}
       </div>
@@ -553,31 +639,42 @@ function StatusTickerSection({ accent }) {
 
 function FeaturesSection({ setPage, accent, anim }) {
   const features = [
-    { icon: '🗺️', title: 'Live Map', desc: 'See outages across Nigeria in real-time. Drill down to street level.', page: 'dashboard' },
-    { icon: '⚡', title: 'Instant Reports', desc: 'Report your outage in seconds. Your community sees it immediately.', page: 'report' },
-    { icon: '📊', title: 'Uptime Stats', desc: 'Historical data, disco comparisons, tariff band info.', page: 'dashboard' },
-    { icon: '🔔', title: 'Alerts', desc: 'Get notified when power is restored in your area.', page: 'report' },
+    {
+      icon: '🗺️', title: 'Live Map', page: 'dashboard',
+      desc: 'The entire national grid, on one screen. See your feeder\'s status, your DISCO\'s record, and your street\'s uptime — before you unpack the generator.',
+    },
+    {
+      icon: '⚡', title: 'Instant Reports', page: 'report',
+      desc: 'One tap. Your outage goes live. The whole street sees it. Your DISCO can\'t pretend it didn\'t happen.',
+    },
+    {
+      icon: '📊', title: 'Uptime Stats', page: 'dashboard',
+      desc: 'Your band minimum. Your historical hours. Your DISCO\'s compliance record. Numbers don\'t lie — even when DISCOs do.',
+    },
+    {
+      icon: '🔔', title: 'Know First', page: 'report',
+      desc: 'Power back on your street? You\'ll know before you get home. Outage spreading? You\'ll know that too. Stay two steps ahead.',
+    },
   ];
   return (
-    <section style={{ padding: '80px 24px', maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ marginBottom: 40 }}>
+    <section className="reveal" style={{ padding: '80px 24px', maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ marginBottom: 48 }}>
         <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>What We Do</span>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(28px, 5vw, 48px)', letterSpacing: '-0.03em', marginTop: 8 }}>Built for Nigerians</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(28px, 5vw, 52px)', letterSpacing: '-0.03em', marginTop: 10, lineHeight: 1.05 }}>Built for<br/>Nigerians.</h2>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
         {features.map((f, i) => (
-          <button key={i} onClick={() => setPage(f.page)} style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 16, padding: '28px 24px', textAlign: 'left',
-            cursor: 'pointer', transition: 'all 0.2s',
-            fontFamily: 'var(--font-body)',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = accent.css + '40'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; }}>
-            <div style={{ fontSize: 28, marginBottom: 14 }}>{f.icon}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--text)', marginBottom: 8 }}>{f.title}</div>
-            <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.6 }}>{f.desc}</div>
+          <button key={i} onClick={() => setPage(f.page)}
+            className={`feature-card reveal reveal-delay-${i + 1}`}
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 16, padding: '28px 24px', textAlign: 'left',
+              cursor: 'pointer', fontFamily: 'var(--font-body)',
+            }}>
+            <div style={{ fontSize: 28, marginBottom: 16 }}>{f.icon}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--text)', marginBottom: 10, lineHeight: 1.2 }}>{f.title}</div>
+            <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.7, fontWeight: 300 }}>{f.desc}</div>
           </button>
         ))}
       </div>
@@ -592,13 +689,13 @@ function RecentReportsSection({ accent }) {
     low_volt: { label: 'Low Voltage', color: '#F5A623' },
   };
   return (
-    <section style={{
+    <section className="reveal" style={{
       padding: '0 24px 80px', maxWidth: 900, margin: '0 auto',
     }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Community</span>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(24px,4vw,36px)', letterSpacing: '-0.02em', marginTop: 4 }}>Live Reports</h2>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>Happening Now</span>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(24px,4vw,36px)', letterSpacing: '-0.02em', marginTop: 4 }}>From the streets.</h2>
         </div>
         <span style={{ fontSize: 12, color: accent.css, fontWeight: 600, cursor: 'pointer' }}>View all →</span>
       </div>
@@ -709,8 +806,8 @@ function DashboardPage({ accent }) {
       }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Live Dashboard</span>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(24px,4vw,40px)', letterSpacing: '-0.03em', marginTop: 4 }}>Nigeria Power Map</h1>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Live · Updated every minute</span>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(24px,4vw,40px)', letterSpacing: '-0.03em', marginTop: 4 }}>Nigeria's Power, Live.</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: accent.css, animation: 'pulse 2s infinite', display: 'inline-block' }}></span>
@@ -728,7 +825,7 @@ function DashboardPage({ accent }) {
             { label: 'Restored Today', value: '214', sub: 'In last 24hrs', color: '#00A651' },
             { label: 'Community Reports', value: '1,247', sub: 'Last 7 days', color: accent.css },
           ].map((c, i) => (
-            <div key={i} style={{
+            <div key={i} className="kpi-card" style={{
               background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: 14, padding: '18px 20px',
               borderTop: `3px solid ${c.color}`,
@@ -911,12 +1008,12 @@ function ListTabContent({ accent, onSelectState, selectedState }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {MOCK_STATES.map((s, i) => (
-        <div key={i} onClick={() => onSelectState(s)} style={{
+        <div key={i} onClick={() => onSelectState(s)} className="state-row" style={{
           background: selectedState?.name === s.name ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
           border: selectedState?.name === s.name ? `1px solid ${accent.css}40` : '1px solid rgba(255,255,255,0.06)',
           borderRadius: 12, padding: '16px 20px',
           display: 'grid', gridTemplateColumns: '1fr auto auto auto auto',
-          alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'all 0.15s',
+          alignItems: 'center', gap: 16, cursor: 'pointer',
         }}>
           <span style={{ fontWeight: 600, fontSize: 15 }}>{s.name}</span>
           <StatusBadge status={s.status} />
@@ -1185,6 +1282,16 @@ function App() {
     document.documentElement.style.setProperty('--accent', accent.css);
     document.documentElement.style.setProperty('--accent-glow', accent.glow);
   }, [accent]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }),
+      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
+    );
+    const els = document.querySelectorAll('.reveal');
+    els.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [page]);
 
   const pageComponents = {
     home:      <HomePage      setPage={setPage} accent={accent} variant={tweaks.homepageVariant} animated={tweaks.showAnimations} />,
