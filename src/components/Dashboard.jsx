@@ -254,18 +254,56 @@ export default function Dashboard() {
             color={monthStats.totalOutageHours === 0 ? '#00A651' : '#E53935'}
           />
           <StatCard
-            label="Days Met"
+            label="Days on Target"
             value={`${monthStats.daysMetThreshold}`}
-            sub={`of ${monthStats.days.length} days`}
+            sub={`of ${monthStats.days.length} days above Band ${band} min`}
             color="#00A651"
           />
           <StatCard
-            label="Days Missed"
+            label="Days Below Min"
             value={`${monthStats.daysMissedThreshold}`}
-            sub="below minimum"
+            sub={
+              complaintReadiness.ready
+                ? 'Enough to file a complaint'
+                : monthStats.daysMissedThreshold === 0
+                  ? 'none this month'
+                  : `${Math.max(0, 5 - monthStats.daysMissedThreshold)} more needed to complain`
+            }
             color={monthStats.daysMissedThreshold > 0 ? '#E53935' : '#00A651'}
           />
         </div>
+
+        {/* Complaint filing progress */}
+        {!complaintReadiness.ready && (
+          <div
+            className="rounded-card px-4 py-3 mb-3"
+            style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-black uppercase tracking-widest" style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}>
+                Complaint Eligibility
+              </p>
+              <span className="text-xs font-bold" style={{ color: monthStats.daysMissedThreshold >= 3 ? '#F5A623' : '#4A5470' }}>
+                {monthStats.daysMissedThreshold} / 5 days
+              </span>
+            </div>
+            <div className="w-full rounded-full overflow-hidden mb-2" style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.08)' }}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, (monthStats.daysMissedThreshold / 5) * 100)}%`,
+                  backgroundColor: monthStats.daysMissedThreshold >= 3 ? '#F5A623' : '#4A5470',
+                }}
+              />
+            </div>
+            <p className="text-xs leading-relaxed" style={{ color: '#4A5470' }}>
+              {monthStats.daysMissedThreshold === 0
+                ? `You need 5 days below the Band ${band} minimum this month to file a formal NERC complaint.`
+                : `${Math.max(0, 5 - monthStats.daysMissedThreshold)} more day${5 - monthStats.daysMissedThreshold !== 1 ? 's' : ''} below the Band ${band} minimum and you can file a formal NERC complaint.`
+              }
+            </p>
+          </div>
+        )}
 
         {/* Streaks */}
         <div className="grid grid-cols-2 gap-3 mb-4">
