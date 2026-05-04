@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient.js';
 import { useProfile } from '../App.jsx';
 import { NIGERIA_LGAS } from '../lib/nigeriaLGAs.js';
@@ -37,26 +37,125 @@ function Pill({ label, value, color }) {
   );
 }
 
+function getDayOptions() {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1 - i);
+    const value = d.toLocaleDateString('en-CA');
+    const label = i === 0
+      ? 'Yesterday'
+      : d.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short' });
+    return { value, label, start: value, end: value };
+  });
+}
+
+function getWeekOptions() {
+  return Array.from({ length: 4 }, (_, i) => {
+    const end = new Date();
+    end.setDate(end.getDate() - 1 - i * 7);
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
+    const startStr = start.toLocaleDateString('en-CA');
+    const endStr   = end.toLocaleDateString('en-CA');
+    const label = i === 0
+      ? 'Last 7 days'
+      : `${start.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}`;
+    return { value: `${startStr}/${endStr}`, label, start: startStr, end: endStr };
+  });
+}
+
+function getMonthOptions() {
+  return Array.from({ length: 3 }, (_, i) => {
+    const now = new Date();
+    const year  = now.getFullYear();
+    const month = now.getMonth() - i;
+    const first = new Date(year, month, 1);
+    const last  = new Date(year, month + 1, 0);
+    const startStr = first.toLocaleDateString('en-CA');
+    const endStr   = last.toLocaleDateString('en-CA');
+    const label = first.toLocaleDateString('en-NG', { month: 'long', year: 'numeric' });
+    return { value: `${startStr}/${endStr}`, label, start: startStr, end: endStr };
+  });
+}
+
+function daysInRange(start, end) {
+  const days = [];
+  const d = new Date(start + 'T00:00:00');
+  const e = new Date(end   + 'T00:00:00');
+  while (d <= e) {
+    days.push(d.toLocaleDateString('en-CA'));
+    d.setDate(d.getDate() + 1);
+  }
+  return days;
+}
+
+async function fetchStatsForRange(start, end) {
+  const days = daysInRange(start, end);
+  const results = await Promise.all(
+    days.map(date => supabase.rpc('get_community_stats', { p_date: date }).then(r => r.data || []))
+  );
+
+  const lgaMap = {};
+  for (const dayStats of results) {
+    for (const s of dayStats) {
+      if (!lgaMap[s.lga]) {
+        lgaMap[s.lga] = {
+          lga: s.lga,
+          totalSupplyHours: 0,
+          daysWithData:     0,
+          maxReporters:     0,
+          maxOutageMins:    0,
+        };
+      }
+      lgaMap[s.lga].totalSupplyHours += parseFloat(s.avg_supply_hours);
+      lgaMap[s.lga].daysWithData     += 1;
+      lgaMap[s.lga].maxReporters      = Math.max(lgaMap[s.lga].maxReporters, s.reporter_count);
+      lgaMap[s.lga].maxOutageMins     = Math.max(lgaMap[s.lga].maxOutageMins, s.max_outage_minutes);
+    }
+  }
+
+  return Object.values(lgaMap).map(s => ({
+    lga:                s.lga,
+    avg_supply_hours:   (s.totalSupplyHours / s.daysWithData).toFixed(2),
+    reporter_count:     s.maxReporters,
+    max_outage_minutes: s.maxOutageMins,
+  }));
+}
+
+const VIEW_MODES = ['Day', 'Week', 'Month'];
+
 export default function Community() {
   const mapRef         = useRef(null);
   const mapInstanceRef = useRef(null);
   const layerRef       = useRef(null);
   const { profile }    = useProfile();
 
-  const [stats, setStats]               = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [mapReady, setMapReady]         = useState(false);
-  const [selectedDate, setSelectedDate] = useState(yesterdayStr);
+  const [stats, setStats]           = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [mapReady, setMapReady]     = useState(false);
+  const [viewMode, setViewMode]     = useState('Day');
+  const [selected, setSelected]     = useState(null);
 
-  const fetchStats = useCallback(async (date) => {
+  const dayOptions   = useMemo(getDayOptions,   []);
+  const weekOptions  = useMemo(getWeekOptions,  []);
+  const monthOptions = useMemo(getMonthOptions, []);
+
+  const currentOptions = viewMode === 'Day' ? dayOptions : viewMode === 'Week' ? weekOptions : monthOptions;
+
+  const activeOption = useMemo(() => {
+    if (selected) return currentOptions.find(o => o.value === selected) || currentOptions[0];
+    return currentOptions[0];
+  }, [selected, currentOptions]);
+
+  useEffect(() => { setSelected(null); }, [viewMode]);
+
+  useEffect(() => {
+    if (!activeOption) return;
     setLoading(true);
-    const { data, error } = await supabase.rpc('get_community_stats', { p_date: date });
-    if (!error && Array.isArray(data)) setStats(data);
-    else setStats([]);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { fetchStats(selectedDate); }, [selectedDate, fetchStats]);
+    fetchStatsForRange(activeOption.start, activeOption.end)
+      .then(data => { setStats(data); setLoading(false); })
+      .catch(() => { setStats([]); setLoading(false); });
+  }, [activeOption]);
 
   useEffect(() => {
     if (!mapRef.current || !window.L || mapInstanceRef.current) return;
@@ -83,7 +182,6 @@ export default function Community() {
     mapInstanceRef.current = map;
 
     setTimeout(() => map.invalidateSize(), 250);
-
     setMapReady(true);
 
     return () => {
@@ -110,6 +208,8 @@ export default function Community() {
         const color       = supplyColor(supplyHours);
         const radius      = 7 + Math.min(Math.log(s.reporter_count + 1) * 3, 10);
 
+        const periodLabel = viewMode === 'Day' ? 'Avg supply' : `Avg supply / day`;
+
         const marker = L.circleMarker([lga.lat, lga.lng], {
           radius,
           fillColor:   color,
@@ -123,7 +223,7 @@ export default function Community() {
             <p class="pw-popup-title">${lga.name}</p>
             <p class="pw-popup-sub">${lga.state} · ${lga.disco}</p>
             <div class="pw-popup-rows">
-              <span style="color:#8B95B0">Avg supply</span>
+              <span style="color:#8B95B0">${periodLabel}</span>
               <span style="color:${color};font-weight:700">${formatSupplyHours(supplyHours)}</span>
               <span style="color:#8B95B0">Reporters</span>
               <span style="color:#F0F4FF;font-weight:600">${s.reporter_count}</span>
@@ -146,61 +246,74 @@ export default function Community() {
         marker.bindPopup(
           `<div class="pw-popup">
             <p class="pw-popup-title">${lga.name}</p>
-            <p class="pw-popup-sub" style="color:#4A5470">${lga.state} · No data for this date</p>
+            <p class="pw-popup-sub" style="color:#4A5470">${lga.state} · No data for this period</p>
           </div>`,
           { className: 'pw-leaflet-popup' }
         );
         layer.addLayer(marker);
       }
     });
-  }, [stats, mapReady]);
-
-  const dateOptions = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1 - i);
-    const value = d.toLocaleDateString('en-CA');
-    const label = i === 0
-      ? 'Yesterday'
-      : d.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short' });
-    return { value, label };
-  });
+  }, [stats, mapReady, viewMode]);
 
   const totalReporters = stats.reduce((s, d) => s + d.reporter_count, 0);
   const sorted         = [...stats].sort((a, b) => parseFloat(a.avg_supply_hours) - parseFloat(b.avg_supply_hours));
-  const worstLGA       = sorted[0]    ?? null;
-  const bestLGA        = sorted[sorted.length - 1] ?? null;
+  const worstLGA       = sorted[0]                    ?? null;
+  const bestLGA        = sorted[sorted.length - 1]    ?? null;
   const hasData        = stats.length > 0;
 
   return (
     <div className="flex flex-col gap-0 pb-24">
-      <div className="px-4 pt-6 pb-3 flex items-start justify-between gap-3">
-        <div>
-          <p
-            className="text-xs font-black uppercase tracking-widest mb-1"
-            style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
-          >
-            Community
-          </p>
-          <h1
-            className="text-xl font-black text-textPrimary leading-none"
-            style={{ fontFamily: 'Syne, system-ui, sans-serif' }}
-          >
-            Outage Map
-          </h1>
-          <p className="text-xs mt-1" style={{ color: '#4A5470' }}>
-            Crowd-sourced supply data across Nigeria
-          </p>
-        </div>
-        <select
-          value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
-          className="text-xs font-semibold px-3 py-1.5 rounded-btn shrink-0"
-          style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)', color: '#8B95B0' }}
+      <div className="px-4 pt-6 pb-3">
+        <p
+          className="text-xs font-black uppercase tracking-widest mb-1"
+          style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
         >
-          {dateOptions.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+          Community
+        </p>
+        <h1
+          className="text-xl font-black text-textPrimary leading-none"
+          style={{ fontFamily: 'Syne, system-ui, sans-serif' }}
+        >
+          Outage Map
+        </h1>
+        <p className="text-xs mt-1" style={{ color: '#4A5470' }}>
+          Crowd-sourced supply data across Nigeria
+        </p>
+
+        {/* View mode + period selector */}
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
+          {/* Segmented control */}
+          <div
+            className="flex rounded-btn p-0.5 shrink-0"
+            style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}
+          >
+            {VIEW_MODES.map(mode => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className="text-xs font-semibold px-3 py-1 rounded-btn transition-all"
+                style={{
+                  backgroundColor: viewMode === mode ? '#00A651' : 'transparent',
+                  color: viewMode === mode ? '#fff' : '#4A5470',
+                }}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+
+          {/* Period picker */}
+          <select
+            value={activeOption?.value || ''}
+            onChange={e => setSelected(e.target.value)}
+            className="text-xs font-semibold px-3 py-1.5 rounded-btn flex-1 min-w-0"
+            style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)', color: '#8B95B0' }}
+          >
+            {currentOptions.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="px-4 pb-3 flex gap-2">
@@ -263,7 +376,7 @@ export default function Community() {
         {!loading && !hasData ? (
           <div className="py-10 text-center">
             <p className="text-3xl mb-3">📡</p>
-            <p className="font-black text-textPrimary mb-1">No reports for this date</p>
+            <p className="font-black text-textPrimary mb-1">No reports for this period</p>
             <p className="text-xs leading-relaxed" style={{ color: '#4A5470' }}>
               Enable community reporting in{' '}
               <span className="font-semibold" style={{ color: '#F0F4FF' }}>Settings → Community</span>{' '}
@@ -311,7 +424,9 @@ export default function Community() {
                       <p className="text-sm font-black tabular-nums" style={{ color, fontFamily: 'Syne, system-ui, sans-serif' }}>
                         {formatSupplyHours(supplyHours)}
                       </p>
-                      <p className="text-xs" style={{ color: '#4A5470' }}>avg supply</p>
+                      <p className="text-xs" style={{ color: '#4A5470' }}>
+                        {viewMode === 'Day' ? 'avg supply' : 'avg / day'}
+                      </p>
                     </div>
                   </div>
                 );

@@ -224,18 +224,10 @@ export default function App() {
     if (!activeOutage) return;
     const now = new Date();
     const timeStr = now.toTimeString().slice(0, 5);
-    const startMinutes = parseInt(activeOutage.start_time.split(':')[0]) * 60
-      + parseInt(activeOutage.start_time.split(':')[1]);
-    const endMinutes = now.getHours() * 60 + now.getMinutes();
-    let durationMinutes = endMinutes - startMinutes;
-    // Handle same-day vs next day
-    if (durationMinutes < 0) durationMinutes += 24 * 60;
-    // Also count midnight crossing
-    const startDate = activeOutage.date;
-    const endDate = now.toLocaleDateString('en-CA');
-    if (startDate !== endDate) {
-      durationMinutes = (24 * 60 - startMinutes) + endMinutes;
-    }
+    const [sy, smo, sd] = activeOutage.date.split('-').map(Number);
+    const [sh, sm, ss = 0] = activeOutage.start_time.split(':').map(Number);
+    const startDateTime = new Date(sy, smo - 1, sd, sh, sm, ss);
+    const durationMinutes = Math.max(0, Math.round((now - startDateTime) / 60000));
     try {
       const { data, error } = await supabase
         .from('outages')

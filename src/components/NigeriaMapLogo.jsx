@@ -1,40 +1,43 @@
 import React from 'react';
 
-// Nigeria outline traced from geographic coordinates (WGS84), normalized to 100×100 viewBox.
+// Nigeria outline from WGS84 coordinates, normalized to 100×100 viewBox.
 // Bounding box: W 2.69°E · E 14.68°E · S 4.27°N · N 13.89°N
-// x = 5 + (lon - 2.69) / 11.99 * 90
-// y = 5 + (13.89 - lat) / 9.62 * 90
+// x = 5 + (lon − 2.69) / 11.99 × 90
+// y = 5 + (13.89 − lat) / 9.62 × 90
 //
-// Clockwise from NW (Kebbi): N border → Lake Chad NE ear → Cameroon E border
+// Clockwise from NW (Sokoto) along N border → NE Lake Chad ear → Cameroon E border
 // → Cross River SE arm → Niger Delta S coast → Lagos SW → Benin W border
 const NIGERIA_PATH = [
-  'M7,18',    // NW: Kebbi/Sokoto start
-  'L21,9',    // upper NW going E
-  'L41,6',    // N: Katsina
-  'L79,5',    // NE: Borno NW edge
-  'L95,13',   // NE Lake Chad ear — most E point (DISTINCTIVE)
-  'L90,23',   // E: upper Cameroon border going S
-  'L86,41',   // E: mid Adamawa
-  'L86,60',   // E: lower Adamawa
-  'L75,74',   // SE: Cross River start
-  'L67,79',   // SE: Cross River mid
-  'L47,89',   // S: Calabar coast
-  'L37,93',   // S: Rivers/Niger Delta
-  'L30,95',   // S: Bayelsa — southernmost point (DISTINCTIVE)
-  'L26,88',   // S: Delta state coast going W
-  'L10,75',   // SW: Lagos area
-  'L5,65',    // W: Benin border lower
-  'L7,46',    // W: Benin border mid
-  'L11,27',   // W: Benin/Niger border upper
-  'Z',        // closes to M7,18
+  'M8,5',    // NW: Sokoto (3.1°E, 13.9°N)
+  'L22,5',   // N border E (5.0°E, 13.9°N)
+  'L37,12',  // N: Katsina dip (7.0°E, 13.1°N)
+  'L52,12',  // N: Kano (9.0°E, 13.1°N)
+  'L67,11',  // N: W Borno (11.0°E, 13.3°N)
+  'L82,7',   // NE: going to Lake Chad ear (13.0°E, 13.7°N)
+  'L95,9',   // NE: Lake Chad ear tip — most E point (14.7°E, 13.5°N)
+  'L94,18',  // E: back from ear, Cameroon border (14.6°E, 12.5°N)
+  'L91,41',  // E: Adamawa (14.2°E, 10.0°N)
+  'L86,60',  // E: lower Adamawa (13.5°E, 8.0°N)
+  'L85,70',  // SE: Cross River start (13.3°E, 7.0°N)
+  'L54,81',  // SE: coast (9.2°E, 5.8°N)
+  'L51,93',  // S: Calabar (8.8°E, 4.5°N)
+  'L49,95',  // S: southernmost — Akwa Ibom (8.6°E, 4.3°N)
+  'L37,95',  // S: Rivers (7.0°E, 4.3°N)
+  'L26,93',  // S: Bayelsa / Niger Delta (5.5°E, 4.5°N)
+  'L22,86',  // SW: Delta/Edo (5.0°E, 5.2°N)
+  'L10,74',  // SW: Lagos area (3.4°E, 6.5°N)
+  'L5,65',   // W: lower Benin border (2.7°E, 7.5°N)
+  'L5,51',   // W: mid (2.7°E, 9.0°N)
+  'L5,32',   // W: upper (2.7°E, 11.0°N)
+  'L5,13',   // W: near N (2.7°E, 13.0°N)
+  'Z',
 ].join(' ');
 
-// Lightning bolt centered on Abuja area (≈ x:49, y:48 in this coordinate system)
-// Scaled from standard 24×24 bolt at ×1.7, offset (27, 28)
-const BOLT_PATH = 'M49,31 L35,51 H46 L44,65 L60,46 H49 Z';
+// Lightning bolt centered on Abuja region (~x 47, y 52)
+// Top-right → mid-left → notch → bottom → mid-right → notch close
+const BOLT_PATH = 'M52,17 L30,53 H45 L41,83 L63,47 H48 Z';
 
 export default function NigeriaMapLogo({ size = 36 }) {
-  const rx = Math.round((size / 100) * 22);
   return (
     <svg
       width={size}
@@ -44,7 +47,6 @@ export default function NigeriaMapLogo({ size = 36 }) {
       style={{ flexShrink: 0, filter: 'drop-shadow(0 0 6px rgba(0,166,81,0.5))' }}
       aria-label="PowerWatch Nigeria — map of Nigeria with lightning bolt"
     >
-      <rect width="100" height="100" rx={rx} fill="#071a0e" />
       <path d={NIGERIA_PATH} fill="#00A651" />
       <path d={BOLT_PATH} fill="white" opacity="0.92" />
     </svg>

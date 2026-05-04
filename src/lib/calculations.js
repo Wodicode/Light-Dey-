@@ -114,74 +114,73 @@ export function minutesToTime(mins) {
  * Split an outage record that might span midnight into per-day chunks.
  * Returns array of { dateStr, outageMinutes }.
  *
- * If endTime is null (active outage), uses current time as the end.
+ * For completed outages: uses duration_minutes (accurate wall-clock elapsed)
+ * when available, falling back to start/end time arithmetic for legacy records.
+ * For active outages: calculates up to the current moment.
  */
 export function splitOutageAcrossDays(outage, activeMinutesOverride = null) {
   const dateStr = outage.date;
   const startMins = timeToMinutes(outage.start_time);
-
-  let endMins;
-  if (outage.is_active) {
-    if (activeMinutesOverride !== null) {
-      endMins = activeMinutesOverride;
-    } else {
-      const now = new Date();
-      const todayDate = formatDateLocal(now);
-      if (todayDate === dateStr) {
-        endMins = now.getHours() * 60 + now.getMinutes();
-      } else {
-        // Outage started on a previous day and is still active — end at current minute of today
-        endMins = 24 * 60;
-      }
-    }
-  } else if (outage.end_time) {
-    endMins = timeToMinutes(outage.end_time);
-  } else {
-    return [];
-  }
-
-  const result = [];
   const startDate = parseLocalDate(dateStr);
+  const result = [];
 
-  if (endMins <= startMins && !outage.is_active) {
-    // End is on the next day
-    const minsOnStartDay = 24 * 60 - startMins;
-    if (minsOnStartDay > 0) {
-      result.push({ dateStr, outageMinutes: minsOnStartDay });
-    }
-    const nextDate = new Date(startDate);
-    nextDate.setDate(nextDate.getDate() + 1);
-    const nextDateStr = formatDateLocal(nextDate);
-    if (endMins > 0) {
-      result.push({ dateStr: nextDateStr, outageMinutes: endMins });
-    }
-  } else if (outage.is_active) {
+  if (outage.is_active) {
+    // ── Active outage ────────────────────────────────────────────────────────
     const now = new Date();
     const todayDate = formatDateLocal(now);
+    const nowMins = activeMinutesOverride !== null
+      ? activeMinutesOverride
+      : now.getHours() * 60 + now.getMinutes();
+
     if (dateStr === todayDate) {
-      const nowMins = now.getHours() * 60 + now.getMinutes();
-      result.push({ dateStr, outageMinutes: nowMins - startMins });
+      const mins = nowMins - startMins;
+      if (mins > 0) result.push({ dateStr, outageMinutes: mins });
     } else {
-      // Spans multiple days — add from start to midnight of start day
+      // Spans multiple days — spread correctly using actual calendar dates
       const minsOnStartDay = 24 * 60 - startMins;
-      if (minsOnStartDay > 0) {
-        result.push({ dateStr, outageMinutes: minsOnStartDay });
-      }
-      // Add full days in between
+      if (minsOnStartDay > 0) result.push({ dateStr, outageMinutes: minsOnStartDay });
+
       let cursor = new Date(startDate);
       cursor.setDate(cursor.getDate() + 1);
       while (formatDateLocal(cursor) !== todayDate) {
         result.push({ dateStr: formatDateLocal(cursor), outageMinutes: 24 * 60 });
         cursor.setDate(cursor.getDate() + 1);
       }
-      // Add partial today
-      const nowMins = now.getHours() * 60 + now.getMinutes();
       if (nowMins > 0) {
         result.push({ dateStr: todayDate, outageMinutes: nowMins });
       }
     }
-  } else {
-    result.push({ dateStr, outageMinutes: endMins - startMins });
+  } else if (outage.duration_minutes > 0) {
+    // ── Completed outage with stored duration ────────────────────────────────
+    // Use duration_minutes to spread accurately across days — this handles
+    // multi-day outages correctly regardless of how end_time relates to start_time.
+    let remaining = outage.duration_minutes;
+    const minsOnStartDay = Math.min(remaining, 24 * 60 - startMins);
+    if (minsOnStartDay > 0) {
+      result.push({ dateStr, outageMinutes: minsOnStartDay });
+      remaining -= minsOnStartDay;
+    }
+    let cursor = new Date(startDate);
+    cursor.setDate(cursor.getDate() + 1);
+    while (remaining > 0) {
+      const dayMins = Math.min(remaining, 24 * 60);
+      result.push({ dateStr: formatDateLocal(cursor), outageMinutes: dayMins });
+      remaining -= dayMins;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  } else if (outage.end_time) {
+    // ── Legacy: completed with end_time but no duration_minutes ─────────────
+    const endMins = timeToMinutes(outage.end_time);
+    if (endMins > startMins) {
+      result.push({ dateStr, outageMinutes: endMins - startMins });
+    } else {
+      // Crosses midnight once
+      const minsOnStartDay = 24 * 60 - startMins;
+      if (minsOnStartDay > 0) result.push({ dateStr, outageMinutes: minsOnStartDay });
+      const nextDate = new Date(startDate);
+      nextDate.setDate(nextDate.getDate() + 1);
+      if (endMins > 0) result.push({ dateStr: formatDateLocal(nextDate), outageMinutes: endMins });
+    }
   }
 
   return result.filter(r => r.outageMinutes > 0);
@@ -190,6 +189,7 @@ export function splitOutageAcrossDays(outage, activeMinutesOverride = null) {
 /**
  * Compute a map of dateStr -> outageMinutes from a list of outage records.
  * Active outages are counted up to now.
+ * Each day is capped at 1440 minutes (24 h) — physically impossible to exceed.
  */
 export function buildOutageMap(outages) {
   const map = {};
@@ -198,6 +198,9 @@ export function buildOutageMap(outages) {
     for (const { dateStr, outageMinutes } of chunks) {
       map[dateStr] = (map[dateStr] || 0) + outageMinutes;
     }
+  }
+  for (const key of Object.keys(map)) {
+    if (map[key] > 1440) map[key] = 1440;
   }
   return map;
 }
