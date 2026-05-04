@@ -3,12 +3,6 @@ import { supabase } from '../supabaseClient.js';
 import { useProfile } from '../App.jsx';
 import { NIGERIA_LGAS } from '../lib/nigeriaLGAs.js';
 
-function yesterdayStr() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toLocaleDateString('en-CA');
-}
-
 function supplyColor(hours) {
   if (hours >= 18) return '#00A651';
   if (hours >= 14) return '#4caf7d';
@@ -37,19 +31,22 @@ function Pill({ label, value, color }) {
   );
 }
 
-function getDayOptions() {
+// ── Period helpers ───────────────────────────────────────────────────────────
+
+function buildDayOptions() {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - 1 - i);
-    const value = d.toLocaleDateString('en-CA');
-    const label = i === 0
-      ? 'Yesterday'
-      : d.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short' });
-    return { value, label, start: value, end: value };
+    const s = d.toLocaleDateString('en-CA');
+    return {
+      label: i === 0 ? 'Yesterday' : d.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short' }),
+      start: s,
+      end:   s,
+    };
   });
 }
 
-function getWeekOptions() {
+function buildWeekOptions() {
   return Array.from({ length: 4 }, (_, i) => {
     const end = new Date();
     end.setDate(end.getDate() - 1 - i * 7);
@@ -57,72 +54,65 @@ function getWeekOptions() {
     start.setDate(start.getDate() - 6);
     const startStr = start.toLocaleDateString('en-CA');
     const endStr   = end.toLocaleDateString('en-CA');
-    const label = i === 0
-      ? 'Last 7 days'
-      : `${start.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}`;
-    return { value: `${startStr}/${endStr}`, label, start: startStr, end: endStr };
+    return {
+      label: i === 0
+        ? 'Last 7 days'
+        : `${start.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}`,
+      start: startStr,
+      end:   endStr,
+    };
   });
 }
 
-function getMonthOptions() {
+function buildMonthOptions() {
   return Array.from({ length: 3 }, (_, i) => {
-    const now = new Date();
-    const year  = now.getFullYear();
-    const month = now.getMonth() - i;
-    const first = new Date(year, month, 1);
-    const last  = new Date(year, month + 1, 0);
-    const startStr = first.toLocaleDateString('en-CA');
-    const endStr   = last.toLocaleDateString('en-CA');
-    const label = first.toLocaleDateString('en-NG', { month: 'long', year: 'numeric' });
-    return { value: `${startStr}/${endStr}`, label, start: startStr, end: endStr };
+    const now   = new Date();
+    const first = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const last  = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+    return {
+      label: first.toLocaleDateString('en-NG', { month: 'long', year: 'numeric' }),
+      start: first.toLocaleDateString('en-CA'),
+      end:   last.toLocaleDateString('en-CA'),
+    };
   });
 }
 
-function daysInRange(start, end) {
+// Aggregate multiple days of RPC results by LGA
+async function fetchRange(start, end) {
+  // Build list of dates
   const days = [];
   const d = new Date(start + 'T00:00:00');
   const e = new Date(end   + 'T00:00:00');
-  while (d <= e) {
-    days.push(d.toLocaleDateString('en-CA'));
-    d.setDate(d.getDate() + 1);
-  }
-  return days;
-}
+  while (d <= e) { days.push(d.toLocaleDateString('en-CA')); d.setDate(d.getDate() + 1); }
 
-async function fetchStatsForRange(start, end) {
-  const days = daysInRange(start, end);
   const results = await Promise.all(
     days.map(date => supabase.rpc('get_community_stats', { p_date: date }).then(r => r.data || []))
   );
 
-  const lgaMap = {};
-  for (const dayStats of results) {
-    for (const s of dayStats) {
-      if (!lgaMap[s.lga]) {
-        lgaMap[s.lga] = {
-          lga: s.lga,
-          totalSupplyHours: 0,
-          daysWithData:     0,
-          maxReporters:     0,
-          maxOutageMins:    0,
-        };
-      }
-      lgaMap[s.lga].totalSupplyHours += parseFloat(s.avg_supply_hours);
-      lgaMap[s.lga].daysWithData     += 1;
-      lgaMap[s.lga].maxReporters      = Math.max(lgaMap[s.lga].maxReporters, s.reporter_count);
-      lgaMap[s.lga].maxOutageMins     = Math.max(lgaMap[s.lga].maxOutageMins, s.max_outage_minutes);
+  const byLGA = {};
+  for (const dayData of results) {
+    for (const s of dayData) {
+      if (!byLGA[s.lga]) byLGA[s.lga] = { total: 0, days: 0, reporters: 0, maxMins: 0 };
+      byLGA[s.lga].total     += parseFloat(s.avg_supply_hours);
+      byLGA[s.lga].days      += 1;
+      byLGA[s.lga].reporters  = Math.max(byLGA[s.lga].reporters, s.reporter_count);
+      byLGA[s.lga].maxMins    = Math.max(byLGA[s.lga].maxMins, s.max_outage_minutes);
     }
   }
 
-  return Object.values(lgaMap).map(s => ({
-    lga:                s.lga,
-    avg_supply_hours:   (s.totalSupplyHours / s.daysWithData).toFixed(2),
-    reporter_count:     s.maxReporters,
-    max_outage_minutes: s.maxOutageMins,
+  return Object.entries(byLGA).map(([lga, v]) => ({
+    lga,
+    avg_supply_hours:   (v.total / v.days).toFixed(2),
+    reporter_count:     v.reporters,
+    max_outage_minutes: v.maxMins,
   }));
 }
 
 const VIEW_MODES = ['Day', 'Week', 'Month'];
+
+const DAY_OPTIONS   = buildDayOptions();
+const WEEK_OPTIONS  = buildWeekOptions();
+const MONTH_OPTIONS = buildMonthOptions();
 
 export default function Community() {
   const mapRef         = useRef(null);
@@ -130,37 +120,42 @@ export default function Community() {
   const layerRef       = useRef(null);
   const { profile }    = useProfile();
 
-  const [stats, setStats]           = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [mapReady, setMapReady]     = useState(false);
-  const [viewMode, setViewMode]     = useState('Day');
-  const [selected, setSelected]     = useState(null);
+  const [stats, setStats]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [mapReady, setMapReady]   = useState(false);
+  const [viewMode, setViewMode]   = useState('Day');
+  const [periodIdx, setPeriodIdx] = useState(0);
 
-  const dayOptions   = useMemo(getDayOptions,   []);
-  const weekOptions  = useMemo(getWeekOptions,  []);
-  const monthOptions = useMemo(getMonthOptions, []);
+  const options = viewMode === 'Day' ? DAY_OPTIONS : viewMode === 'Week' ? WEEK_OPTIONS : MONTH_OPTIONS;
+  const period  = options[periodIdx] || options[0];
 
-  const currentOptions = viewMode === 'Day' ? dayOptions : viewMode === 'Week' ? weekOptions : monthOptions;
+  // Reset to first option when switching modes
+  const handleModeChange = useCallback((mode) => {
+    setViewMode(mode);
+    setPeriodIdx(0);
+  }, []);
 
-  const activeOption = useMemo(() => {
-    if (selected) return currentOptions.find(o => o.value === selected) || currentOptions[0];
-    return currentOptions[0];
-  }, [selected, currentOptions]);
-
-  useEffect(() => { setSelected(null); }, [viewMode]);
+  // ── Data fetch ────────────────────────────────────────────────────────────
+  const doFetch = useCallback(async (start, end) => {
+    setLoading(true);
+    try {
+      const data = await fetchRange(start, end);
+      setStats(data);
+    } catch {
+      setStats([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!activeOption) return;
-    setLoading(true);
-    fetchStatsForRange(activeOption.start, activeOption.end)
-      .then(data => { setStats(data); setLoading(false); })
-      .catch(() => { setStats([]); setLoading(false); });
-  }, [activeOption]);
+    doFetch(period.start, period.end);
+  }, [period.start, period.end, doFetch]);
 
+  // ── Map init ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapRef.current || !window.L || mapInstanceRef.current) return;
-    const L = window.L;
-
+    const L   = window.L;
     const map = L.map(mapRef.current, {
       center: [9.0, 8.0],
       zoom: 6,
@@ -192,6 +187,7 @@ export default function Community() {
     };
   }, []);
 
+  // ── Map layer update ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!mapReady || !layerRef.current || !window.L) return;
     const L     = window.L;
@@ -207,8 +203,7 @@ export default function Community() {
         const supplyHours = parseFloat(s.avg_supply_hours);
         const color       = supplyColor(supplyHours);
         const radius      = 7 + Math.min(Math.log(s.reporter_count + 1) * 3, 10);
-
-        const periodLabel = viewMode === 'Day' ? 'Avg supply' : `Avg supply / day`;
+        const periodLabel = viewMode === 'Day' ? 'Avg supply' : 'Avg supply / day';
 
         const marker = L.circleMarker([lga.lat, lga.lng], {
           radius,
@@ -255,14 +250,16 @@ export default function Community() {
     });
   }, [stats, mapReady, viewMode]);
 
+  // ── Derived stats ─────────────────────────────────────────────────────────
   const totalReporters = stats.reduce((s, d) => s + d.reporter_count, 0);
   const sorted         = [...stats].sort((a, b) => parseFloat(a.avg_supply_hours) - parseFloat(b.avg_supply_hours));
-  const worstLGA       = sorted[0]                    ?? null;
-  const bestLGA        = sorted[sorted.length - 1]    ?? null;
+  const worstLGA       = sorted[0]                 ?? null;
+  const bestLGA        = sorted[sorted.length - 1] ?? null;
   const hasData        = stats.length > 0;
 
   return (
     <div className="flex flex-col gap-0 pb-24">
+      {/* ── Header ── */}
       <div className="px-4 pt-6 pb-3">
         <p
           className="text-xs font-black uppercase tracking-widest mb-1"
@@ -280,9 +277,9 @@ export default function Community() {
           Crowd-sourced supply data across Nigeria
         </p>
 
-        {/* View mode + period selector */}
-        <div className="flex items-center gap-2 mt-3 flex-wrap">
-          {/* Segmented control */}
+        {/* Period selector */}
+        <div className="flex items-center gap-2 mt-3">
+          {/* Day / Week / Month tabs */}
           <div
             className="flex rounded-btn p-0.5 shrink-0"
             style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}
@@ -290,11 +287,12 @@ export default function Community() {
             {VIEW_MODES.map(mode => (
               <button
                 key={mode}
-                onClick={() => setViewMode(mode)}
-                className="text-xs font-semibold px-3 py-1 rounded-btn transition-all"
+                onClick={() => handleModeChange(mode)}
+                className="text-xs font-semibold px-3 py-1 rounded-btn"
                 style={{
                   backgroundColor: viewMode === mode ? '#00A651' : 'transparent',
-                  color: viewMode === mode ? '#fff' : '#4A5470',
+                  color:           viewMode === mode ? '#fff'     : '#4A5470',
+                  transition: 'background-color 0.15s',
                 }}
               >
                 {mode}
@@ -304,18 +302,23 @@ export default function Community() {
 
           {/* Period picker */}
           <select
-            value={activeOption?.value || ''}
-            onChange={e => setSelected(e.target.value)}
-            className="text-xs font-semibold px-3 py-1.5 rounded-btn flex-1 min-w-0"
-            style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)', color: '#8B95B0' }}
+            value={periodIdx}
+            onChange={e => setPeriodIdx(Number(e.target.value))}
+            className="text-xs font-semibold px-3 py-1.5 rounded-btn flex-1"
+            style={{
+              backgroundColor: '#111827',
+              border: '1px solid rgba(255,255,255,0.07)',
+              color: '#8B95B0',
+            }}
           >
-            {currentOptions.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+            {options.map((o, i) => (
+              <option key={i} value={i}>{o.label}</option>
             ))}
           </select>
         </div>
       </div>
 
+      {/* ── Stats pills ── */}
       <div className="px-4 pb-3 flex gap-2">
         <Pill label="Reporters" value={loading ? '…' : totalReporters} color="#00A651" />
         <Pill
@@ -330,6 +333,7 @@ export default function Community() {
         />
       </div>
 
+      {/* ── Map ── */}
       <div className="px-4">
         <div
           style={{
@@ -358,11 +362,12 @@ export default function Community() {
         </div>
       </div>
 
+      {/* ── Legend ── */}
       <div className="px-4 pt-2 pb-1 flex justify-end gap-3 flex-wrap">
         {[
-          { color: '#00A651', label: '18+ h' },
-          { color: '#F5A623', label: '10–18 h' },
-          { color: '#E53935', label: '< 10 h' },
+          { color: '#00A651',              label: '18+ h' },
+          { color: '#F5A623',              label: '10–18 h' },
+          { color: '#E53935',              label: '< 10 h' },
           { color: 'rgba(255,255,255,0.1)', label: 'No data' },
         ].map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1">
@@ -372,6 +377,7 @@ export default function Community() {
         ))}
       </div>
 
+      {/* ── LGA list ── */}
       <div className="px-4 pt-2">
         {!loading && !hasData ? (
           <div className="py-10 text-center">
@@ -408,12 +414,7 @@ export default function Community() {
                         : 'none',
                     }}
                   >
-                    <div
-                      style={{
-                        width: 8, height: 8, borderRadius: '50%',
-                        backgroundColor: color, flexShrink: 0,
-                      }}
-                    />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-textPrimary truncate">{s.lga}</p>
                       <p className="text-xs" style={{ color: '#4A5470' }}>
@@ -436,6 +437,7 @@ export default function Community() {
         ) : null}
       </div>
 
+      {/* ── Community CTA ── */}
       {(!profile?.community_opt_in || !profile?.lga) && (
         <div className="px-4 pt-4">
           <div
