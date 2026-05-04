@@ -14,6 +14,7 @@ import Admin from './components/Admin.jsx';
 import Onboarding from './components/Onboarding.jsx';
 import SpendTracker from './components/SpendTracker.jsx';
 import Badges from './components/Badges.jsx';
+import NigeriaMapLogo from './components/NigeriaMapLogo.jsx';
 
 // ── Contexts ────────────────────────────────────────────────────────────────
 
@@ -440,20 +441,7 @@ export default function App() {
               }}
             >
               <div className="flex items-center gap-2.5">
-                {/* Lightning bolt logo square */}
-                <div
-                  style={{
-                    width: 32, height: 32, borderRadius: 8,
-                    background: 'linear-gradient(135deg, #00A651 0%, #007a3d 100%)',
-                    boxShadow: '0 0 12px rgba(0,166,81,0.4)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                    <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" />
-                  </svg>
-                </div>
+                <NigeriaMapLogo size={32} />
                 <span
                   style={{
                     fontFamily: 'Syne, system-ui, sans-serif',

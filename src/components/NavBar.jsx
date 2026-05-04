@@ -1,5 +1,6 @@
 import React from 'react';
 import { Home, List, MapPin, BarChart2, FileText, Shield, Wallet } from 'lucide-react';
+import NigeriaMapLogo from './NigeriaMapLogo.jsx';
 
 const BASE_TABS = [
   { id: 'dashboard', label: 'Home',      Icon: Home },
@@ -49,7 +50,7 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 h-14 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <span className="text-lg" aria-hidden>⚡</span>
+        <NigeriaMapLogo size={24} />
         <span
           style={{
             fontFamily: 'Syne, system-ui, sans-serif',

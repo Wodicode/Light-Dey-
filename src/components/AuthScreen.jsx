@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient.js';
+import NigeriaMapLogo from './NigeriaMapLogo.jsx';
 
 function GoogleIcon() {
   return (
@@ -17,22 +18,6 @@ function Check() {
     <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
       <path d="M2 6l3 3 5-5" stroke="#00A651" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  );
-}
-
-function BoltLogo({ size = 36, radius = 9 }) {
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: radius,
-      background: 'linear-gradient(135deg, #00A651 0%, #007a3d 100%)',
-      boxShadow: '0 0 16px rgba(0,166,81,0.4)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0,
-    }}>
-      <svg width={size * 0.44} height={size * 0.44} viewBox="0 0 24 24" fill="white">
-        <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" />
-      </svg>
-    </div>
   );
 }
 
@@ -142,7 +127,7 @@ export default function AuthScreen() {
 
         {/* Logo */}
         <div className="flex items-center gap-2.5 relative z-10">
-          <BoltLogo size={36} radius={9} />
+          <NigeriaMapLogo size={36} />
           <span style={{
             fontFamily: 'Syne, system-ui, sans-serif',
             fontWeight: 800, fontSize: 15, letterSpacing: '-0.01em', color: '#F0F4FF',
@@ -157,7 +142,7 @@ export default function AuthScreen() {
             <p className="text-xs font-black uppercase tracking-widest mb-5" style={{
               color: '#00A651', fontFamily: 'Syne, system-ui, sans-serif',
             }}>
-              — Track your power supply
+              — Real-time outage tracking
             </p>
             <h1 style={{
               fontFamily: 'Syne, system-ui, sans-serif',
@@ -167,11 +152,11 @@ export default function AuthScreen() {
               lineHeight: 1.1,
               color: '#F0F4FF',
             }}>
-              Know when your<br />
-              <span style={{ color: '#00A651' }}>DisCo owes you.</span>
+              Your power supply,<br />
+              <span style={{ color: '#00A651' }}>on the record.</span>
             </h1>
             <p className="mt-5 text-base leading-relaxed" style={{ color: '#8B95B0', maxWidth: 420 }}>
-              PowerWatch logs your outages, tracks your supply against NERC Band minimums, and generates a formal complaint letter the moment you qualify — all in one place.
+              PowerWatch tracks every outage in real time, measures your daily supply against your NERC Band minimum, and helps you act when your DisCo falls short.
             </p>
           </div>
 
@@ -221,7 +206,7 @@ export default function AuthScreen() {
         {/* Mobile-only header */}
         <div className="lg:hidden text-center mb-8 px-2">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <BoltLogo size={32} radius={8} />
+            <NigeriaMapLogo size={32} />
             <span style={{
               fontFamily: 'Syne, system-ui, sans-serif',
               fontWeight: 800, fontSize: 16, color: '#F0F4FF',
@@ -237,11 +222,11 @@ export default function AuthScreen() {
             color: '#F0F4FF',
             lineHeight: 1.15,
           }}>
-            Know when your{' '}
-            <span style={{ color: '#00A651' }}>DisCo owes you.</span>
+            Your power supply,{' '}
+            <span style={{ color: '#00A651' }}>on the record.</span>
           </h2>
           <p className="text-sm mt-3 leading-relaxed" style={{ color: '#8B95B0' }}>
-            Log outages, track supply, and generate NERC complaint letters automatically.
+            Track every outage, measure your supply against your NERC Band minimum, and act when your DisCo falls short.
           </p>
 
           {/* Mobile mini feature list */}
