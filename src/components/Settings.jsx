@@ -432,6 +432,21 @@ function ElectricitySection({ profile, saveProfile, showToast }) {
 export default function Settings({ onSaved }) {
   const { profile, saveProfile } = useProfile();
   const { showToast } = useAuth();
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      const { error } = await supabase.rpc('delete_account');
+      if (error) throw error;
+      await supabase.auth.signOut();
+    } catch {
+      showToast('Failed to delete account. Please contact support.');
+      setDeleting(false);
+      setDeleteConfirm(false);
+    }
+  }
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto">
@@ -451,7 +466,7 @@ export default function Settings({ onSaved }) {
         <CommunitySection profile={profile} saveProfile={saveProfile} showToast={showToast} />
         <ElectricitySection profile={profile} saveProfile={saveProfile} showToast={showToast} />
       </div>
-      <div className="mt-6">
+      <div className="mt-6 flex flex-col gap-3">
         <button
           onClick={() => supabase.auth.signOut()}
           className="w-full py-3 rounded-btn font-semibold text-sm transition-opacity"
@@ -459,6 +474,41 @@ export default function Settings({ onSaved }) {
         >
           Sign Out
         </button>
+
+        {!deleteConfirm ? (
+          <button
+            onClick={() => setDeleteConfirm(true)}
+            className="w-full py-3 rounded-btn font-semibold text-sm transition-opacity"
+            style={{ backgroundColor: 'transparent', border: '1px solid rgba(127,45,45,0.3)', color: '#6B7280' }}
+          >
+            Delete Account
+          </button>
+        ) : (
+          <div className="rounded-card p-4 flex flex-col gap-3" style={{ backgroundColor: 'rgba(127,29,29,0.13)', border: '1px solid rgba(200,50,50,0.4)' }}>
+            <p className="text-sm font-semibold" style={{ color: '#fca5a5' }}>Permanently delete your account?</p>
+            <p className="text-xs" style={{ color: '#9CA3AF' }}>
+              All your outage logs, profile data, and community reports will be erased. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-btn text-sm font-semibold"
+                style={{ backgroundColor: '#1E293B', color: '#94A3B8', border: '1px solid #334155' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-btn text-sm font-semibold disabled:opacity-50"
+                style={{ backgroundColor: 'rgba(185,28,28,0.8)', color: '#fef2f2' }}
+              >
+                {deleting ? 'Deleting…' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

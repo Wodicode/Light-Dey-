@@ -19,12 +19,12 @@ function Step1({ onNext }) {
   return (
     <div className="flex flex-col gap-6 text-center">
       <div className="flex justify-center">
-        <div
-          className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
-          style={{ backgroundColor: 'rgba(46,204,113,0.12)', border: '1px solid rgba(46,204,113,0.25)' }}
-        >
-          ⚡
-        </div>
+        <img
+          src="/icon-192.png"
+          alt="PowerWatch"
+          className="w-20 h-20 rounded-2xl"
+          style={{ filter: 'drop-shadow(0 0 12px rgba(0,166,81,0.4))' }}
+        />
       </div>
       <div>
         <h1 className="text-2xl font-black text-textPrimary mb-2">Welcome to PowerWatch</h1>
