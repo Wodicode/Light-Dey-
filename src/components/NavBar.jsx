@@ -71,7 +71,7 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
               onClick={() => onTabChange(id)}
               className="nav-tab relative flex items-center gap-3 w-full px-3 py-2.5 rounded-btn text-left"
               style={{
-                color: active ? '#00A651' : '#4A5470',
+                color: active ? '#00A651' : '#8B95B0',
                 backgroundColor: active ? 'rgba(0,166,81,0.1)' : 'transparent',
               }}
               aria-label={label}
@@ -96,7 +96,7 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
           onClick={() => onTabChange('settings')}
           className="nav-tab relative flex items-center gap-3 w-full px-3 py-2.5 rounded-btn text-left"
           style={{
-            color: currentTab === 'settings' ? '#00A651' : '#4A5470',
+            color: currentTab === 'settings' ? '#00A651' : '#8B95B0',
             backgroundColor: currentTab === 'settings' ? 'rgba(0,166,81,0.1)' : 'transparent',
           }}
           aria-label="Settings"
@@ -134,7 +134,7 @@ export default function NavBar({ currentTab, onTabChange, isAdmin, setupIncomple
             key={id}
             onClick={() => onTabChange(id)}
             className="nav-tab flex-1 flex flex-col items-center justify-center gap-0.5 relative"
-            style={{ color: active ? '#00A651' : '#4A5470' }}
+            style={{ color: active ? '#00A651' : '#8B95B0' }}
             aria-label={label}
           >
             <div
