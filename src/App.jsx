@@ -432,7 +432,8 @@ export default function App() {
                 transition: 'background-color 0.4s ease, box-shadow 0.4s ease',
               }}
             >
-              <div className="flex items-center gap-2.5">
+              {/* Logo — hidden on desktop since sidebar already shows it */}
+              <div className="flex lg:hidden items-center gap-2.5">
                 <NigeriaMapLogo size={32} />
                 <span
                   style={{
@@ -463,9 +464,12 @@ export default function App() {
                   Nigeria
                 </span>
               </div>
+              {/* Spacer on desktop so nothing floats left */}
+              <div className="hidden lg:block" />
+              {/* Settings button — hidden on desktop since sidebar has Settings nav item */}
               <button
                 onClick={() => setCurrentTab(currentTab === 'settings' ? 'dashboard' : 'settings')}
-                className="btn-press w-9 h-9 rounded-btn flex items-center justify-center"
+                className="lg:hidden btn-press w-9 h-9 rounded-btn flex items-center justify-center"
                 style={{ color: '#8B95B0', backgroundColor: 'rgba(255,255,255,0.05)' }}
                 aria-label={currentTab === 'settings' ? 'Back to Home' : 'Settings'}
               >
