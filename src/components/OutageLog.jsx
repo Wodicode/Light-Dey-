@@ -170,6 +170,9 @@ export default function OutageLog() {
           </>
         ) : (
           <>
+            <p className="text-xs text-center" style={{ color: '#4A5470' }}>
+              Tap to start timing this outage.
+            </p>
             <button
               onClick={startOutage}
               className="btn-outage w-full py-6 rounded-card font-black text-xl tracking-widest uppercase text-white"
@@ -180,9 +183,6 @@ export default function OutageLog() {
                 LIGHT IS OFF
               </span>
             </button>
-            <p className="text-xs text-center" style={{ color: '#4A5470' }}>
-              Tap to start timing this outage.
-            </p>
           </>
         )}
       </section>
