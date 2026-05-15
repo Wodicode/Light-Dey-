@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { ZapOff, Zap } from 'lucide-react';
 import { useProfile, useOutages } from '../App.jsx';
 import {
   BAND_CONFIG,
@@ -12,6 +13,7 @@ import {
   getComplaintReadiness,
   todayStr,
   formatDuration,
+  formatElapsedSeconds,
 } from '../lib/calculations.js';
 import { getStreakData, getCurrentTier } from '../lib/gamification.js';
 
@@ -112,6 +114,73 @@ function currentMonthName() {
   return new Date().toLocaleDateString('en-NG', { month: 'long' });
 }
 
+// ── Quick log widget ──────────────────────────────────────────────────────────
+function QuickLogWidget() {
+  const { activeOutage, startOutage, endOutage } = useOutages();
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!activeOutage) { setElapsed(0); return; }
+    const compute = () => {
+      const now = new Date();
+      const [h, m, s = 0] = activeOutage.start_time.split(':').map(Number);
+      const parts = activeOutage.date.split('-').map(Number);
+      const start = new Date(parts[0], parts[1] - 1, parts[2], h, m, s);
+      setElapsed(Math.max(0, Math.floor((now - start) / 1000)));
+    };
+    compute();
+    const id = setInterval(compute, 1000);
+    return () => clearInterval(id);
+  }, [activeOutage]);
+
+  if (activeOutage) {
+    return (
+      <section className="flex flex-col gap-3">
+        <div
+          className="rounded-card px-4 py-4 flex items-center justify-between"
+          style={{ backgroundColor: '#111827', border: '1px solid rgba(229,57,53,0.35)' }}
+        >
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="inline-block w-1.5 h-1.5 rounded-full blink" style={{ backgroundColor: '#E53935' }} />
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#E53935' }}>Outage live</span>
+            </div>
+            <p className="text-2xl font-black tabular-nums" style={{ color: '#E53935', fontFamily: 'Syne, system-ui, sans-serif' }}>
+              {formatElapsedSeconds(elapsed)}
+            </p>
+          </div>
+          <button
+            onClick={endOutage}
+            className="btn-restore px-5 py-3 rounded-btn font-black text-sm tracking-widest uppercase btn-glow"
+            style={{ background: 'linear-gradient(180deg, #00A651 0%, #008f47 100%)', color: '#001a0f' }}
+          >
+            <span className="flex items-center gap-2">
+              <Zap size={16} strokeWidth={2.5} />
+              BACK
+            </span>
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="flex flex-col gap-2">
+      <p className="text-xs text-center" style={{ color: '#4A5470' }}>Tap to start timing an outage</p>
+      <button
+        onClick={startOutage}
+        className="btn-outage w-full py-5 rounded-card font-black text-lg tracking-widest uppercase text-white"
+        style={{ background: 'linear-gradient(180deg, #E53935 0%, #c62828 100%)' }}
+      >
+        <span className="flex items-center justify-center gap-3">
+          <ZapOff size={20} strokeWidth={2.5} />
+          LIGHT IS OFF
+        </span>
+      </button>
+    </section>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Dashboard({ onViewBadges }) {
   const { profile } = useProfile();
@@ -190,6 +259,9 @@ export default function Dashboard({ onViewBadges }) {
           Complete your profile in Settings to personalise thresholds and generate complaint letters.
         </AlertBox>
       )}
+
+      {/* ── Quick log ── */}
+      <QuickLogWidget />
 
       {/* ── Today ── */}
       <section>
