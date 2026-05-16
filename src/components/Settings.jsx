@@ -127,16 +127,17 @@ function SectionSaveButton({ saving, label }) {
 }
 
 function PersonalSection({ profile, saveProfile, showToast, onSaved }) {
-  const [form, setForm] = useState({ full_name: '', address: '', area: '', lga: '' });
+  const [form, setForm] = useState({ full_name: '', address: '', area: '', lga: '', whatsapp_number: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setForm({
-        full_name: profile.full_name || '',
-        address:   profile.address   || '',
-        area:      profile.area      || '',
-        lga:       profile.lga       || '',
+        full_name:        profile.full_name        || '',
+        address:          profile.address          || '',
+        area:             profile.area             || '',
+        lga:              profile.lga              || '',
+        whatsapp_number:  profile.whatsapp_number  || '',
       });
     }
   }, [profile]);
@@ -146,7 +147,13 @@ function PersonalSection({ profile, saveProfile, showToast, onSaved }) {
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
-    const result = await saveProfile({ full_name: form.full_name, address: form.address, area: form.area, lga: form.lga });
+    const result = await saveProfile({
+      full_name: form.full_name,
+      address: form.address,
+      area: form.area,
+      lga: form.lga,
+      whatsapp_number: form.whatsapp_number || null,
+    });
     setSaving(false);
     if (result.success) {
       showToast('Personal details saved ✓');
@@ -181,6 +188,23 @@ function PersonalSection({ profile, saveProfile, showToast, onSaved }) {
           <span className="ml-2 text-xs font-normal" style={dimText}>used for the community map</span>
         </label>
         <LGACombobox value={form.lga} onChange={(val) => setForm(f => ({ ...f, lga: val }))} />
+      </div>
+      <div>
+        <label className={labelClass}>
+          WhatsApp Number
+          <span className="ml-2 text-xs font-normal" style={dimText}>for the outage bot</span>
+        </label>
+        <input
+          className={inputClass}
+          style={inputStyle}
+          type="tel"
+          placeholder="e.g. +2348012345678"
+          value={form.whatsapp_number}
+          onChange={set('whatsapp_number')}
+        />
+        <p className="mt-1 text-xs" style={dimText}>
+          Link your number to log outages by sending <strong style={{ color: '#F0F4FF' }}>off</strong> / <strong style={{ color: '#F0F4FF' }}>on</strong> to the PowerWatch WhatsApp bot.
+        </p>
       </div>
       <SectionSaveButton saving={saving} label="Save Personal Details" />
     </form>
