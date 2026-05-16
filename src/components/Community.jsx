@@ -154,35 +154,62 @@ export default function Community() {
 
   // ── Map init ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!mapRef.current || !window.L || mapInstanceRef.current) return;
-    const L   = window.L;
-    const map = L.map(mapRef.current, {
-      center: [9.0, 8.0],
-      zoom: 6,
-      zoomControl: true,
-      attributionControl: false,
-    });
+    if (!mapRef.current || mapInstanceRef.current) return;
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 18,
-      subdomains: 'abcd',
-    }).addTo(map);
+    function initMap() {
+      if (!window.L) return;
+      const L   = window.L;
+      const map = L.map(mapRef.current, {
+        center: [9.0, 8.0],
+        zoom: 6,
+        zoomControl: true,
+        attributionControl: false,
+        preferCanvas: true,
+      });
 
-    L.control.attribution({ prefix: false, position: 'bottomright' })
-      .addAttribution('© <a href="https://carto.com" style="color:#4A5470">CARTO</a>')
-      .addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        subdomains: 'abc',
+        opacity: 0.25,
+      }).addTo(map);
 
-    const layer = L.layerGroup().addTo(map);
-    layerRef.current       = layer;
-    mapInstanceRef.current = map;
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        subdomains: 'abcd',
+      }).addTo(map);
 
-    setTimeout(() => map.invalidateSize(), 250);
-    setMapReady(true);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        subdomains: 'abcd',
+      }).addTo(map);
+
+      L.control.attribution({ prefix: false, position: 'bottomright' })
+        .addAttribution('© <a href="https://carto.com" style="color:#4A5470">CARTO</a>')
+        .addTo(map);
+
+      const layer = L.layerGroup().addTo(map);
+      layerRef.current       = layer;
+      mapInstanceRef.current = map;
+
+      // Multiple invalidateSize calls to handle layout settling
+      [100, 300, 600, 1200].forEach(ms => setTimeout(() => map.invalidateSize(), ms));
+      setMapReady(true);
+    }
+
+    if (window.L) {
+      initMap();
+    } else {
+      // Leaflet not ready yet — poll until available
+      const poll = setInterval(() => { if (window.L) { clearInterval(poll); initMap(); } }, 100);
+      return () => clearInterval(poll);
+    }
 
     return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-      layerRef.current       = null;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        layerRef.current       = null;
+      }
       setMapReady(false);
     };
   }, []);
@@ -194,7 +221,13 @@ export default function Community() {
     const layer = layerRef.current;
     layer.clearLayers();
 
-    const statsMap = Object.fromEntries(stats.map(s => [s.lga, s]));
+    // Aliases for LGA names that changed — maps old DB value → current LGA name
+    const LGA_ALIASES = { 'AMAC (Garki/Wuse)': 'AMAC' };
+    const normalisedStats = stats.map(s => ({
+      ...s,
+      lga: LGA_ALIASES[s.lga] || s.lga,
+    }));
+    const statsMap = Object.fromEntries(normalisedStats.map(s => [s.lga, s]));
 
     NIGERIA_LGAS.forEach(lga => {
       const s = statsMap[lga.name];
@@ -251,8 +284,10 @@ export default function Community() {
   }, [stats, mapReady, viewMode]);
 
   // ── Derived stats ─────────────────────────────────────────────────────────
-  const totalReporters = stats.reduce((s, d) => s + d.reporter_count, 0);
-  const sorted         = [...stats].sort((a, b) => parseFloat(a.avg_supply_hours) - parseFloat(b.avg_supply_hours));
+  const LGA_ALIASES = { 'AMAC (Garki/Wuse)': 'AMAC' };
+  const normStats = stats.map(s => ({ ...s, lga: LGA_ALIASES[s.lga] || s.lga }));
+  const totalReporters = normStats.reduce((s, d) => s + d.reporter_count, 0);
+  const sorted         = [...normStats].sort((a, b) => parseFloat(a.avg_supply_hours) - parseFloat(b.avg_supply_hours));
   const worstLGA       = sorted[0]                 ?? null;
   const bestLGA        = sorted[sorted.length - 1] ?? null;
   const hasData        = stats.length > 0;

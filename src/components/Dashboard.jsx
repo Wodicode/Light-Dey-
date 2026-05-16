@@ -509,6 +509,60 @@ export default function Dashboard({ onViewBadges }) {
           </button>
         </div>
       </section>
+
+      {/* ── Guide ── */}
+      <GuidSection band={band} config={config} />
     </div>
+  );
+}
+
+function GuidSection({ band, config }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 rounded-card text-left"
+        style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}
+      >
+        <span className="text-sm font-semibold" style={{ color: '#8B95B0' }}>What am I looking at?</span>
+        <span style={{ color: '#4A5470', fontSize: 18, lineHeight: 1 }}>{open ? '−' : '+'}</span>
+      </button>
+      {open && (
+        <div className="mt-2 rounded-card p-4 flex flex-col gap-4" style={{ backgroundColor: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+          {[
+            {
+              title: 'Supply & Outage',
+              body: `Supply is the number of hours electricity was available today. Outage is the total time without power. Band ${band} customers are entitled to at least ${config.minHoursPerDay} hrs/day under NERC regulations.`,
+            },
+            {
+              title: 'Supply %',
+              body: 'How much of the full 24-hour day you had power. 100% means no outages at all. Below 83% for Band A means your DisCo missed its legal minimum.',
+            },
+            {
+              title: 'Surplus / Shortfall',
+              body: `How many hours above or below the Band ${band} minimum you are. A shortfall means your DisCo owes you service credits under the NERC May 2024 tariff order.`,
+            },
+            {
+              title: 'Days Below Min',
+              body: 'Each day your supply falls below the Band minimum counts toward complaint eligibility. At 5 days in a month you can file a formal NERC complaint — the app generates the letter automatically.',
+            },
+            {
+              title: 'Complaint Eligibility bar',
+              body: 'Tracks how many qualifying "below minimum" days you have this month. At 5/5 the Report tab unlocks a pre-filled complaint letter addressed to your DisCo and NERC.',
+            },
+            {
+              title: 'Logging streak',
+              body: 'Earn a streak by logging outages or confirming a good day every day. Streaks unlock badges and show your DisCo you are actively monitoring their service.',
+            },
+          ].map(({ title, body }) => (
+            <div key={title}>
+              <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: '#00A651', fontFamily: 'Syne, system-ui, sans-serif' }}>{title}</p>
+              <p className="text-xs leading-relaxed" style={{ color: '#8B95B0' }}>{body}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
