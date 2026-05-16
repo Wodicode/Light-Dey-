@@ -167,18 +167,7 @@ export default function Community() {
         preferCanvas: true,
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        subdomains: 'abc',
-        opacity: 0.25,
-      }).addTo(map);
-
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        subdomains: 'abcd',
-      }).addTo(map);
-
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png', {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
         maxZoom: 18,
         subdomains: 'abcd',
       }).addTo(map);
@@ -370,21 +359,21 @@ export default function Community() {
 
       {/* ── Map ── */}
       <div className="px-4">
-        <div
-          style={{
-            height: 340,
-            borderRadius: 14,
-            overflow: 'hidden',
-            position: 'relative',
-            boxShadow: '0 0 0 1px rgba(255,255,255,0.06)',
-          }}
-        >
-          <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
+        <div style={{ position: 'relative' }}>
+          <div
+            ref={mapRef}
+            style={{
+              height: 340,
+              borderRadius: 14,
+              overflow: 'hidden',
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.06)',
+            }}
+          />
 
           {loading && (
             <div
               style={{
-                position: 'absolute', inset: 0, zIndex: 900,
+                position: 'absolute', inset: 0, zIndex: 900, borderRadius: 14,
                 backgroundColor: 'rgba(10,17,33,0.65)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
