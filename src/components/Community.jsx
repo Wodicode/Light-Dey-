@@ -167,9 +167,9 @@ export default function Community() {
         preferCanvas: true,
       });
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+      L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}.png', {
         maxZoom: 18,
-        subdomains: 'abcd',
+        attribution: '© Stadia Maps',
       }).addTo(map);
 
       L.control.attribution({ prefix: false, position: 'bottomright' })
