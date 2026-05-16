@@ -127,17 +127,16 @@ function SectionSaveButton({ saving, label }) {
 }
 
 function PersonalSection({ profile, saveProfile, showToast, onSaved }) {
-  const [form, setForm] = useState({ full_name: '', address: '', area: '', lga: '', whatsapp_number: '' });
+  const [form, setForm] = useState({ full_name: '', address: '', area: '', lga: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (profile) {
       setForm({
-        full_name:        profile.full_name        || '',
-        address:          profile.address          || '',
-        area:             profile.area             || '',
-        lga:              profile.lga              || '',
-        whatsapp_number:  profile.whatsapp_number  || '',
+        full_name: profile.full_name || '',
+        address:   profile.address   || '',
+        area:      profile.area      || '',
+        lga:       profile.lga       || '',
       });
     }
   }, [profile]);
@@ -149,10 +148,9 @@ function PersonalSection({ profile, saveProfile, showToast, onSaved }) {
     setSaving(true);
     const result = await saveProfile({
       full_name: form.full_name,
-      address: form.address,
-      area: form.area,
-      lga: form.lga,
-      whatsapp_number: form.whatsapp_number || null,
+      address:   form.address,
+      area:      form.area,
+      lga:       form.lga,
     });
     setSaving(false);
     if (result.success) {
@@ -188,23 +186,6 @@ function PersonalSection({ profile, saveProfile, showToast, onSaved }) {
           <span className="ml-2 text-xs font-normal" style={dimText}>used for the community map</span>
         </label>
         <LGACombobox value={form.lga} onChange={(val) => setForm(f => ({ ...f, lga: val }))} />
-      </div>
-      <div>
-        <label className={labelClass}>
-          WhatsApp Number
-          <span className="ml-2 text-xs font-normal" style={dimText}>for the outage bot</span>
-        </label>
-        <input
-          className={inputClass}
-          style={inputStyle}
-          type="tel"
-          placeholder="e.g. +2348012345678"
-          value={form.whatsapp_number}
-          onChange={set('whatsapp_number')}
-        />
-        <p className="mt-1 text-xs" style={dimText}>
-          Link your number to log outages by sending <strong style={{ color: '#F0F4FF' }}>off</strong> / <strong style={{ color: '#F0F4FF' }}>on</strong> to the PowerWatch WhatsApp bot.
-        </p>
       </div>
       <SectionSaveButton saving={saving} label="Save Personal Details" />
     </form>
@@ -453,6 +434,175 @@ function ElectricitySection({ profile, saveProfile, showToast }) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// WhatsApp Bot Section
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Normalise a Nigerian phone number to the E.164 digits format WhatsApp uses
+ * as the sender `from` field (no leading +).
+ * Accepts: 08012345678 | +2348012345678 | 2348012345678
+ * Returns: 2348012345678
+ */
+function normaliseNigerianPhone(raw) {
+  if (!raw) return '';
+  const digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('234') && digits.length >= 13) return digits;
+  if (digits.startsWith('0') && digits.length === 11) return '234' + digits.slice(1);
+  // Already in international format without the country code prefix
+  if (digits.length === 10) return '234' + digits;
+  return digits;
+}
+
+function WhatsAppSection({ profile, saveProfile, showToast }) {
+  const [phone, setPhone]   = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile) setPhone(profile.whatsapp_number || '');
+  }, [profile]);
+
+  const normalised = normaliseNigerianPhone(phone);
+  // Valid if it resolves to a 13-digit Nigerian number (234 + 10 digits)
+  const isValid = normalised.startsWith('234') && normalised.length === 13;
+
+  async function handleSave(e) {
+    e.preventDefault();
+    if (phone && !isValid) {
+      showToast('Enter a valid Nigerian mobile number (e.g. 08012345678).', 'error');
+      return;
+    }
+    setSaving(true);
+    const result = await saveProfile({ whatsapp_number: phone ? normalised : null });
+    setSaving(false);
+    if (result.success) showToast('WhatsApp number saved ✓');
+  }
+
+  async function handleRemove() {
+    setSaving(true);
+    const result = await saveProfile({ whatsapp_number: null });
+    setSaving(false);
+    if (result.success) {
+      setPhone('');
+      showToast('WhatsApp number removed.');
+    }
+  }
+
+  // Deep-link opens a chat to the PowerWatch bot number with a pre-filled message
+  const testLink = isValid
+    ? `https://wa.me/${normalised}?text=help`
+    : null;
+
+  return (
+    <form onSubmit={handleSave} className="rounded-card p-4 flex flex-col gap-4" style={sectionStyle}>
+      {/* Section header */}
+      <div className="flex items-center gap-2">
+        {/* WhatsApp wordmark icon */}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.334.101 11.893c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652C8.094 23.333 10.05 23.84 12.045 23.84h.006c6.584 0 11.943-5.334 11.944-11.893.001-3.181-1.24-6.17-3.475-8.498z" fill="#25D366"/>
+          <path d="M12.045 21.785h-.005a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.977.999-3.638-.235-.373a9.793 9.793 0 0 1-1.507-5.266c.002-5.42 4.427-9.831 9.884-9.831 2.64 0 5.122 1.024 6.99 2.882a9.77 9.77 0 0 1 2.897 6.952c-.003 5.421-4.427 9.889-9.89 9.889zm5.422-7.403c-.297-.148-1.757-.864-2.031-.963-.273-.099-.472-.148-.671.149-.198.297-.769.963-.942 1.161-.174.198-.347.223-.644.074-.297-.148-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.457.13-.605.134-.133.297-.347.446-.521.149-.174.198-.297.298-.495.099-.198.05-.372-.025-.521-.074-.148-.671-1.613-.919-2.209-.242-.58-.487-.501-.671-.51a12.06 12.06 0 0 0-.571-.01c-.198 0-.521.074-.793.372-.272.297-1.04 1.016-1.04 2.479 0 1.463 1.065 2.876 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.29.173-1.413-.074-.124-.272-.198-.57-.347z" fill="#fff"/>
+        </svg>
+        <h3
+          className="text-sm font-black uppercase tracking-widest"
+          style={{ color: '#4A5470', fontFamily: 'Syne, system-ui, sans-serif' }}
+        >
+          WhatsApp Bot
+        </h3>
+      </div>
+
+      <p className="text-xs leading-relaxed" style={dimText}>
+        Link your WhatsApp number to log outages by message — no app needed. Send{' '}
+        <strong style={{ color: '#F0F4FF' }}>off</strong> when light goes,{' '}
+        <strong style={{ color: '#F0F4FF' }}>on</strong> when it returns.
+      </p>
+
+      {/* Phone input */}
+      <div>
+        <label className={labelClass}>WhatsApp Phone Number</label>
+        <input
+          className={inputClass}
+          style={inputStyle}
+          type="tel"
+          inputMode="tel"
+          placeholder="e.g. 08012345678 or +2348012345678"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          autoComplete="tel"
+        />
+        {phone.length > 0 && (
+          <p className="mt-1 text-xs" style={{ color: isValid ? '#00A651' : '#fbbf24' }}>
+            {isValid
+              ? `Will be saved as: +${normalised}`
+              : 'Enter a valid Nigerian mobile number (11 digits starting with 0, or include +234).'}
+          </p>
+        )}
+      </div>
+
+      {/* Commands cheat-sheet */}
+      <div
+        className="rounded-btn px-3 py-3 flex flex-col gap-2"
+        style={{ backgroundColor: 'rgba(0,166,81,0.05)', border: '1px solid rgba(0,166,81,0.12)' }}
+      >
+        <p className="text-xs font-semibold" style={{ color: '#00A651' }}>WhatsApp commands</p>
+        {[
+          ['off · light off · nepa · no light · light don go', 'Start outage'],
+          ['on · light on · back · nepa don come · light don come', 'End outage'],
+          ['status', 'Check current outage'],
+          ['help', 'Show all commands'],
+        ].map(([cmd, desc]) => (
+          <div key={cmd} className="flex items-start gap-2 text-xs">
+            <code
+              className="shrink-0 px-1.5 py-0.5 rounded font-mono leading-relaxed"
+              style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#F0F4FF', fontSize: 11 }}
+            >
+              {cmd}
+            </code>
+            <span style={dimText}>{desc}</span>
+          </div>
+        ))}
+      </div>
+
+      <SectionSaveButton saving={saving} label="Save WhatsApp Number" />
+
+      {/* Secondary actions: test link + remove */}
+      {(testLink || profile?.whatsapp_number) && (
+        <div className="flex gap-2">
+          {testLink && (
+            <a
+              href={testLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 py-2.5 rounded-btn text-sm font-semibold text-center transition-opacity"
+              style={{
+                backgroundColor: 'rgba(37,211,102,0.08)',
+                border: '1px solid rgba(37,211,102,0.22)',
+                color: '#25D366',
+              }}
+            >
+              Test on WhatsApp
+            </a>
+          )}
+          {profile?.whatsapp_number && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={saving}
+              className="flex-1 py-2.5 rounded-btn text-sm font-semibold transition-opacity disabled:opacity-50"
+              style={{
+                backgroundColor: 'rgba(127,29,29,0.1)',
+                border: '1px solid rgba(127,45,45,0.3)',
+                color: '#fca5a5',
+              }}
+            >
+              Remove Number
+            </button>
+          )}
+        </div>
+      )}
+    </form>
+  );
+}
+
 export default function Settings({ onSaved }) {
   const { profile, saveProfile } = useProfile();
   const { showToast } = useAuth();
@@ -489,6 +639,7 @@ export default function Settings({ onSaved }) {
         <PersonalSection profile={profile} saveProfile={saveProfile} showToast={showToast} onSaved={onSaved} />
         <CommunitySection profile={profile} saveProfile={saveProfile} showToast={showToast} />
         <ElectricitySection profile={profile} saveProfile={saveProfile} showToast={showToast} />
+        <WhatsAppSection profile={profile} saveProfile={saveProfile} showToast={showToast} />
       </div>
       <div className="mt-6 flex flex-col gap-3">
         <button
